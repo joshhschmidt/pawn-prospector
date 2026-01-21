@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Game, FilterState, OpeningBucket } from '@/types/chess';
+import { Game, FilterState, OpeningBucket, OPENING_LABELS } from '@/types/chess';
 import { filterGames, calculateStats, calculateOpeningStats, generateStrengths, generateWeaknesses, generateRecommendations, generateTrainingPlan, calculateScoreOverTime } from '@/lib/analysis';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatCard } from './StatCard';
@@ -8,8 +8,8 @@ import { ScoreChart } from './ScoreChart';
 import { ResultsPie } from './ResultsPie';
 import { FilterBar } from './FilterBar';
 import { CoachingCard } from './CoachingCard';
-import { TrainingPlanCard } from './TrainingPlanCard';
 import { OpeningTable } from './OpeningTable';
+import { CoachChat } from './CoachChat';
 import { motion } from 'framer-motion';
 import { Trophy, Target, TrendingUp, Clock, Zap, Shield, Crown, Swords } from 'lucide-react';
 
@@ -34,7 +34,6 @@ export const AnalysisDashboard = ({ games, username }: AnalysisDashboardProps) =
   const strengths = generateStrengths(stats, openingStats);
   const weaknesses = generateWeaknesses(stats, openingStats);
   const recommendations = generateRecommendations(stats, openingStats);
-  const trainingPlan = generateTrainingPlan(openingStats);
 
   const whiteGames = filterGames(games, { ...filters, color: 'white' });
   const blackGames = filterGames(games, { ...filters, color: 'black' });
@@ -44,6 +43,34 @@ export const AnalysisDashboard = ({ games, username }: AnalysisDashboardProps) =
   const blackOpeningStats = calculateOpeningStats(blackGames);
 
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
+
+  // Prepare stats for AI coach
+  const topOpenings = openingStats
+    .filter(o => o.games >= 3)
+    .sort((a, b) => b.scorePercent - a.scorePercent)
+    .slice(0, 3)
+    .map(o => `${OPENING_LABELS[o.bucket]} (${o.scorePercent.toFixed(0)}%)`);
+
+  const weakestOpenings = openingStats
+    .filter(o => o.games >= 3)
+    .sort((a, b) => a.scorePercent - b.scorePercent)
+    .slice(0, 3)
+    .map(o => `${OPENING_LABELS[o.bucket]} (${o.scorePercent.toFixed(0)}%)`);
+
+  const playerStats = {
+    totalGames: stats.totalGames,
+    wins: stats.wins,
+    losses: stats.losses,
+    draws: stats.draws,
+    scorePercent: stats.scorePercent,
+    avgGameLength: stats.avgGameLength,
+    avgQueenMovesFirst10: stats.avgQueenMovesFirst10,
+    avgCastlingPly: stats.avgCastlingPly,
+    quickLosses: stats.quickLosses,
+    quickWins: stats.quickWins,
+    topOpenings,
+    weakestOpenings,
+  };
 
   return (
     <div className="space-y-6">
@@ -73,17 +100,14 @@ export const AnalysisDashboard = ({ games, username }: AnalysisDashboardProps) =
         availableOpenings={availableOpenings}
       />
 
-      {/* Tabs */}
+      {/* Tabs - simplified to Overview and Openings */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="bg-secondary border border-border">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="white">As White</TabsTrigger>
-          <TabsTrigger value="black">As Black</TabsTrigger>
           <TabsTrigger value="openings">Openings</TabsTrigger>
-          <TabsTrigger value="coaching">Coaching Plan</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
+        {/* Overview Tab - Now includes White/Black stats and Coaching */}
         <TabsContent value="overview" className="space-y-6">
           {/* Key Stats */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -112,39 +136,7 @@ export const AnalysisDashboard = ({ games, username }: AnalysisDashboardProps) =
             />
           </div>
 
-          {/* Secondary Stats */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Quick Wins"
-              value={stats.quickWins}
-              subtitle="≤15 moves"
-              icon={<Zap className="h-5 w-5" />}
-              variant="success"
-            />
-            <StatCard
-              title="Quick Losses"
-              value={stats.quickLosses}
-              subtitle="≤15 moves"
-              icon={<Zap className="h-5 w-5" />}
-              variant="danger"
-            />
-            <StatCard
-              title="Queen Moves (First 10)"
-              value={stats.avgQueenMovesFirst10.toFixed(1)}
-              subtitle="avg per game"
-              icon={<Crown className="h-5 w-5" />}
-              variant={stats.avgQueenMovesFirst10 < 1 ? 'success' : stats.avgQueenMovesFirst10 < 2 ? 'warning' : 'danger'}
-            />
-            <StatCard
-              title="Nc7+ Forks"
-              value={stats.nc7ForkGames}
-              subtitle="games with this motif"
-              icon={<Swords className="h-5 w-5" />}
-              variant={stats.nc7ForkGames === 0 ? 'success' : 'warning'}
-            />
-          </div>
-
-          {/* Charts */}
+          {/* Charts Row */}
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-border bg-card p-6">
               <h3 className="text-lg font-semibold mb-4">Results Distribution</h3>
@@ -162,94 +154,86 @@ export const AnalysisDashboard = ({ games, username }: AnalysisDashboardProps) =
             </div>
           </div>
 
-          {/* Opening Performance */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h3 className="text-lg font-semibold mb-4">Opening Performance</h3>
-            <OpeningChart data={openingStats} type="performance" />
-          </div>
-        </TabsContent>
-
-        {/* As White Tab */}
-        <TabsContent value="white" className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Games as White"
-              value={whiteStats.totalGames}
-              icon={<Crown className="h-5 w-5" />}
-            />
-            <StatCard
-              title="Win Rate"
-              value={`${whiteStats.scorePercent.toFixed(1)}%`}
-              subtitle={`${whiteStats.wins}W / ${whiteStats.draws}D / ${whiteStats.losses}L`}
-              icon={<Trophy className="h-5 w-5" />}
-              variant={whiteStats.scorePercent >= 50 ? 'success' : 'danger'}
-            />
-            <StatCard
-              title="Avg Castling"
-              value={whiteStats.avgCastlingPly > 0 ? `Move ${Math.round(whiteStats.avgCastlingPly / 2)}` : 'N/A'}
-              icon={<Shield className="h-5 w-5" />}
-            />
-            <StatCard
-              title="Queen Moves First 10"
-              value={whiteStats.avgQueenMovesFirst10.toFixed(1)}
-              icon={<Crown className="h-5 w-5" />}
-            />
-          </div>
-
+          {/* As White / As Black Side by Side */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold mb-4">White Openings</h3>
-              <OpeningChart data={whiteOpeningStats} type="frequency" />
+            {/* As White */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Crown className="h-5 w-5 text-chess-white" />
+                As White
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <StatCard
+                  title="Games"
+                  value={whiteStats.totalGames}
+                  icon={<Target className="h-4 w-4" />}
+                />
+                <StatCard
+                  title="Win Rate"
+                  value={`${whiteStats.scorePercent.toFixed(1)}%`}
+                  subtitle={`${whiteStats.wins}W / ${whiteStats.draws}D / ${whiteStats.losses}L`}
+                  icon={<Trophy className="h-4 w-4" />}
+                  variant={whiteStats.scorePercent >= 50 ? 'success' : 'danger'}
+                />
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">Top White Openings</h4>
+                <OpeningChart data={whiteOpeningStats.slice(0, 5)} type="performance" />
+              </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Performance by Opening</h3>
-              <OpeningChart data={whiteOpeningStats} type="performance" />
+
+            {/* As Black */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Crown className="h-5 w-5" />
+                As Black
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <StatCard
+                  title="Games"
+                  value={blackStats.totalGames}
+                  icon={<Target className="h-4 w-4" />}
+                />
+                <StatCard
+                  title="Win Rate"
+                  value={`${blackStats.scorePercent.toFixed(1)}%`}
+                  subtitle={`${blackStats.wins}W / ${blackStats.draws}D / ${blackStats.losses}L`}
+                  icon={<Trophy className="h-4 w-4" />}
+                  variant={blackStats.scorePercent >= 50 ? 'success' : 'danger'}
+                />
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">Top Black Openings</h4>
+                <OpeningChart data={blackOpeningStats.slice(0, 5)} type="performance" />
+              </div>
             </div>
           </div>
 
-          <OpeningTable data={whiteOpeningStats} />
-        </TabsContent>
-
-        {/* As Black Tab */}
-        <TabsContent value="black" className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Games as Black"
-              value={blackStats.totalGames}
-              icon={<Crown className="h-5 w-5" />}
+          {/* Coaching Insights Row */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <CoachingCard
+              type="strength"
+              title="Your Strengths"
+              items={strengths}
             />
-            <StatCard
-              title="Win Rate"
-              value={`${blackStats.scorePercent.toFixed(1)}%`}
-              subtitle={`${blackStats.wins}W / ${blackStats.draws}D / ${blackStats.losses}L`}
-              icon={<Trophy className="h-5 w-5" />}
-              variant={blackStats.scorePercent >= 50 ? 'success' : 'danger'}
+            <CoachingCard
+              type="weakness"
+              title="Areas to Improve"
+              items={weaknesses}
             />
-            <StatCard
-              title="Avg Castling"
-              value={blackStats.avgCastlingPly > 0 ? `Move ${Math.round(blackStats.avgCastlingPly / 2)}` : 'N/A'}
-              icon={<Shield className="h-5 w-5" />}
-            />
-            <StatCard
-              title="Nc7+ Forks Received"
-              value={blackStats.nc7ForkGames}
-              icon={<Swords className="h-5 w-5" />}
-              variant={blackStats.nc7ForkGames === 0 ? 'success' : 'warning'}
+            <CoachingCard
+              type="recommendation"
+              title="Quick Tips"
+              items={recommendations.slice(0, 3)}
             />
           </div>
 
+          {/* AI Coach Chatbot */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Black Openings</h3>
-              <OpeningChart data={blackOpeningStats} type="frequency" />
-            </div>
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Performance by Opening</h3>
-              <OpeningChart data={blackOpeningStats} type="performance" />
+            <div className="lg:col-span-2">
+              <CoachChat playerStats={playerStats} username={username} />
             </div>
           </div>
-
-          <OpeningTable data={blackOpeningStats} />
         </TabsContent>
 
         {/* Openings Tab */}
@@ -266,29 +250,6 @@ export const AnalysisDashboard = ({ games, username }: AnalysisDashboardProps) =
           </div>
 
           <OpeningTable data={openingStats} />
-        </TabsContent>
-
-        {/* Coaching Tab */}
-        <TabsContent value="coaching" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <CoachingCard
-              type="strength"
-              title="Your Strengths"
-              items={strengths}
-            />
-            <CoachingCard
-              type="weakness"
-              title="Areas to Improve"
-              items={weaknesses}
-            />
-            <CoachingCard
-              type="recommendation"
-              title="Recommendations"
-              items={recommendations}
-            />
-          </div>
-
-          <TrainingPlanCard plan={trainingPlan} />
         </TabsContent>
       </Tabs>
     </div>
