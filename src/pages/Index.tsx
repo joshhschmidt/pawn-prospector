@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Game, FilterState } from '@/types/chess';
 import { generateDemoGames, DEMO_USER_ID, DEMO_USERNAME } from '@/lib/demo-data';
 import { parsePGNFile } from '@/lib/pgn-parser';
@@ -23,7 +24,12 @@ import { Sparkles, Upload } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const Index = () => {
+interface IndexProps {
+  demoMode?: boolean;
+}
+
+const Index = ({ demoMode = false }: IndexProps) => {
+  const [searchParams] = useSearchParams();
   const [games, setGames] = useState<Game[]>([]);
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +42,27 @@ const Index = () => {
     openingBucket: 'all',
   });
   const isMobile = useIsMobile();
+
+  // Check for demo mode from prop or URL parameter
+  const isDemoMode = demoMode || searchParams.get('demo') === 'true';
+  const viewParam = searchParams.get('view');
+
+  // Auto-load demo data when in demo mode
+  useEffect(() => {
+    if (isDemoMode && games.length === 0 && !isLoading) {
+      const demoGames = generateDemoGames(DEMO_USER_ID);
+      setGames(demoGames);
+      setUsername(DEMO_USERNAME);
+      setShowDashboard(true);
+    }
+  }, [isDemoMode, games.length, isLoading]);
+
+  // Handle deep linking to specific views
+  useEffect(() => {
+    if (viewParam && ['overview', 'openings', 'habits', 'tactics', 'training', 'export'].includes(viewParam)) {
+      setCurrentView(viewParam);
+    }
+  }, [viewParam]);
 
   const handleUsernameImport = async (importUsername: string, dateRange: number, maxGames: number) => {
     setIsLoading(true);
