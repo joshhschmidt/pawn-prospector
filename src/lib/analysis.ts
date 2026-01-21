@@ -85,20 +85,14 @@ export const calculateStats = (games: Game[]): AnalysisStats => {
 };
 
 export const calculateOpeningStats = (games: Game[]): OpeningStats[] => {
-  const buckets: Record<OpeningBucket, Game[]> = {
-    london: [],
-    queens_gambit: [],
-    other_d4: [],
-    non_d4_white: [],
-    sicilian: [],
-    sicilian_dragon: [],
-    pirc_modern: [],
-    other_e4_black: [],
-    other_black: [],
-  };
+  // Dynamic bucket creation based on games
+  const buckets: Record<string, Game[]> = {};
 
   games.forEach(game => {
     if (game.opening_bucket) {
+      if (!buckets[game.opening_bucket]) {
+        buckets[game.opening_bucket] = [];
+      }
       buckets[game.opening_bucket].push(game);
     }
   });

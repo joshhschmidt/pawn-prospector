@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Game, TimeControl, GameResult, PlayerColor, OpeningBucket } from '@/types/chess';
-import { classifyOpening, parseTimeControl as parseTC } from './pgn-parser';
+import { classifyOpening } from './opening-classifier';
+import { parseTimeControl as parseTC } from './pgn-parser';
 
 interface ChessComGame {
   pgn: string;
