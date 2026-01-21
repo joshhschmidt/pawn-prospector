@@ -1,10 +1,10 @@
 import { Game, OpeningBucket, TimeControl, GameResult, PlayerColor } from '@/types/chess';
+import { classifyOpening } from './opening-classifier';
 
 interface ParsedPGN {
   headers: Record<string, string>;
   moves: string[];
 }
-
 export const parsePGN = (pgnText: string): ParsedPGN[] => {
   const games: ParsedPGN[] = [];
   
@@ -50,56 +50,8 @@ export const parsePGN = (pgnText: string): ParsedPGN[] => {
   return games;
 };
 
-export const classifyOpening = (moves: string[], playerColor: PlayerColor): OpeningBucket | null => {
-  if (moves.length < 2) return null;
-  
-  const firstMoves = moves.slice(0, 12); // First 6 moves (12 plies)
-  const whiteMoves = firstMoves.filter((_, i) => i % 2 === 0);
-  const blackMoves = firstMoves.filter((_, i) => i % 2 === 1);
-  
-  if (playerColor === 'white') {
-    // White openings
-    if (whiteMoves[0] === 'd4') {
-      // Check for London
-      const hasBf4 = whiteMoves.slice(0, 4).includes('Bf4');
-      const hasC4 = whiteMoves.slice(0, 3).includes('c4');
-      
-      if (hasBf4 && !hasC4) {
-        return 'london';
-      }
-      if (hasC4) {
-        return 'queens_gambit';
-      }
-      return 'other_d4';
-    }
-    // Non-d4 openings (e4, c4, Nf3, etc.)
-    return 'non_d4_white';
-  } else {
-    // Black openings
-    if (whiteMoves[0] === 'e4') {
-      // Sicilian
-      if (blackMoves[0] === 'c5') {
-        // Check for Dragon/Accelerated Dragon
-        const hasG6 = blackMoves.slice(0, 5).includes('g6');
-        if (hasG6) {
-          return 'sicilian_dragon';
-        }
-        return 'sicilian';
-      }
-      
-      // Pirc/Modern
-      const hasD6 = blackMoves.slice(0, 3).includes('d6');
-      const hasG6 = blackMoves.slice(0, 4).includes('g6');
-      if (hasD6 && hasG6) {
-        return 'pirc_modern';
-      }
-      
-      return 'other_e4_black';
-    }
-    
-    return 'other_black';
-  }
-};
+// classifyOpening is now imported from opening-classifier.ts
+export { classifyOpening } from './opening-classifier';
 
 export const parseTimeControl = (timeControlStr: string): TimeControl => {
   if (!timeControlStr) return 'rapid';

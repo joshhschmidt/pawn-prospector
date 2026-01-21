@@ -210,14 +210,71 @@ export type Database = {
     Enums: {
       game_result: "win" | "loss" | "draw"
       opening_bucket:
-        | "london"
+        | "italian_game"
+        | "ruy_lopez"
+        | "scotch_game"
+        | "kings_gambit"
+        | "vienna_game"
+        | "bishops_opening"
+        | "four_knights"
+        | "petrov_defense"
+        | "center_game"
+        | "danish_gambit"
+        | "ponziani"
+        | "london_system"
         | "queens_gambit"
-        | "other_d4"
-        | "non_d4_white"
-        | "sicilian"
+        | "catalan"
+        | "trompowsky"
+        | "colle_system"
+        | "torre_attack"
+        | "veresov"
+        | "blackmar_diemer"
+        | "richter_veresov"
+        | "english_opening"
+        | "reti_opening"
+        | "kings_indian_attack"
+        | "birds_opening"
+        | "larsen_opening"
+        | "grob_attack"
+        | "other_white"
+        | "sicilian_najdorf"
         | "sicilian_dragon"
-        | "pirc_modern"
-        | "other_e4_black"
+        | "sicilian_scheveningen"
+        | "sicilian_sveshnikov"
+        | "sicilian_classical"
+        | "sicilian_kan"
+        | "sicilian_taimanov"
+        | "sicilian_accelerated_dragon"
+        | "sicilian_alapin"
+        | "sicilian_closed"
+        | "sicilian_other"
+        | "french_defense"
+        | "caro_kann"
+        | "scandinavian"
+        | "alekhine_defense"
+        | "pirc_defense"
+        | "modern_defense"
+        | "philidor_defense"
+        | "owen_defense"
+        | "kings_pawn_other"
+        | "kings_indian"
+        | "grunfeld"
+        | "nimzo_indian"
+        | "queens_indian"
+        | "bogo_indian"
+        | "benoni"
+        | "dutch_defense"
+        | "slav_defense"
+        | "semi_slav"
+        | "queens_gambit_declined"
+        | "queens_gambit_accepted"
+        | "tarrasch_defense"
+        | "chigorin_defense"
+        | "budapest_gambit"
+        | "benko_gambit"
+        | "d4_other"
+        | "english_symmetrical"
+        | "anglo_indian"
         | "other_black"
       time_control:
         | "bullet"
@@ -354,14 +411,71 @@ export const Constants = {
     Enums: {
       game_result: ["win", "loss", "draw"],
       opening_bucket: [
-        "london",
+        "italian_game",
+        "ruy_lopez",
+        "scotch_game",
+        "kings_gambit",
+        "vienna_game",
+        "bishops_opening",
+        "four_knights",
+        "petrov_defense",
+        "center_game",
+        "danish_gambit",
+        "ponziani",
+        "london_system",
         "queens_gambit",
-        "other_d4",
-        "non_d4_white",
-        "sicilian",
+        "catalan",
+        "trompowsky",
+        "colle_system",
+        "torre_attack",
+        "veresov",
+        "blackmar_diemer",
+        "richter_veresov",
+        "english_opening",
+        "reti_opening",
+        "kings_indian_attack",
+        "birds_opening",
+        "larsen_opening",
+        "grob_attack",
+        "other_white",
+        "sicilian_najdorf",
         "sicilian_dragon",
-        "pirc_modern",
-        "other_e4_black",
+        "sicilian_scheveningen",
+        "sicilian_sveshnikov",
+        "sicilian_classical",
+        "sicilian_kan",
+        "sicilian_taimanov",
+        "sicilian_accelerated_dragon",
+        "sicilian_alapin",
+        "sicilian_closed",
+        "sicilian_other",
+        "french_defense",
+        "caro_kann",
+        "scandinavian",
+        "alekhine_defense",
+        "pirc_defense",
+        "modern_defense",
+        "philidor_defense",
+        "owen_defense",
+        "kings_pawn_other",
+        "kings_indian",
+        "grunfeld",
+        "nimzo_indian",
+        "queens_indian",
+        "bogo_indian",
+        "benoni",
+        "dutch_defense",
+        "slav_defense",
+        "semi_slav",
+        "queens_gambit_declined",
+        "queens_gambit_accepted",
+        "tarrasch_defense",
+        "chigorin_defense",
+        "budapest_gambit",
+        "benko_gambit",
+        "d4_other",
+        "english_symmetrical",
+        "anglo_indian",
         "other_black",
       ],
       time_control: ["bullet", "blitz", "rapid", "classical", "correspondence"],
