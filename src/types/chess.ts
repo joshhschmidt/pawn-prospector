@@ -147,6 +147,7 @@ export interface OpeningStats {
   losses: number;
   draws: number;
   scorePercent: number;
+  winPercent: number;
 }
 
 export interface AnalysisStats {

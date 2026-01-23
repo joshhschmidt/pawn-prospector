@@ -120,7 +120,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
           </TabsContent>
 
           <TabsContent value="success" className="mt-0">
-            <SectionCard title="Opening Success Rate" description="Score % by opening">
+            <SectionCard title="Opening Win Rate" description="Win % by opening (excluding draws)">
               <ChartInsights
                 chartType="success"
                 openingStats={openingStats}
