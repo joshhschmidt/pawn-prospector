@@ -3,8 +3,8 @@ import { Game, FilterState, OpeningBucket, PlayerColor } from '@/types/chess';
 import { filterGames, calculateStats, calculateOpeningStats } from '@/lib/analysis';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { SectionCard } from '@/components/layout/SectionCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { KPIGrid, KPICard } from './KPICard';
 import { OpeningChart } from './OpeningChart';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Trophy, Target, XCircle, Minus, Loader2, Lightbulb, ChevronDown, MessageCircle,
   Swords, Crown, Castle, Shield, Zap, Brain, Crosshair, Timer, Footprints,
-  AlertTriangle, CheckCircle, Eye, type LucideIcon
+  AlertTriangle, CheckCircle, Eye, BarChart3, TrendingUp, TrendingDown, type LucideIcon
 } from 'lucide-react';
 
 interface RecentProgressPageProps {
@@ -321,6 +321,52 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
     </div>
   );
 
+  const CollapsibleSection = ({ 
+    title, 
+    description, 
+    icon: Icon, 
+    defaultOpen = true, 
+    children 
+  }: { 
+    title: string; 
+    description: string; 
+    icon: LucideIcon; 
+    defaultOpen?: boolean; 
+    children: React.ReactNode;
+  }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="rounded-xl border border-border bg-card overflow-hidden opening-card">
+          <CollapsibleTrigger className="w-full flex hover:bg-muted/10 transition-colors">
+            {/* Icon column */}
+            <div className="flex items-center justify-center w-16 bg-primary/5 border-r border-border">
+              <Icon className="h-8 w-8 text-primary/40" strokeWidth={1.5} />
+            </div>
+            
+            {/* Content column */}
+            <div className="flex-1 p-4 flex items-center justify-between">
+              <div className="text-left">
+                <h4 className="font-semibold text-foreground">{title}</h4>
+                <p className="text-sm text-muted-foreground">{description}</p>
+              </div>
+              <ChevronDown 
+                className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
+              />
+            </div>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="p-4 border-t border-border">
+              {children}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    );
+  };
+
   return (
     <PageContainer>
       <PageHeader 
@@ -352,23 +398,38 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
             {/* Two Column Layout */}
             <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column - Overview Analytics */}
-              <div className="space-y-6">
-                <SectionCard title="Opening Frequency" description="Most played openings">
+              <div className="space-y-4">
+                <CollapsibleSection
+                  title="Opening Frequency"
+                  description="Most played openings"
+                  icon={BarChart3}
+                  defaultOpen={true}
+                >
                   <div className="h-[280px]">
                     <OpeningChart data={openingStats.slice(0, 6)} type="frequency" />
                   </div>
-                </SectionCard>
+                </CollapsibleSection>
 
-                <SectionCard title="Opening Win Rate" description="Win % by opening (excluding draws)">
+                <CollapsibleSection
+                  title="Opening Win Rate"
+                  description="Win % by opening (excluding draws)"
+                  icon={Target}
+                  defaultOpen={true}
+                >
                   <div className="h-[280px]">
                     <OpeningChart data={openingStats.slice(0, 6)} type="performance" />
                   </div>
-                </SectionCard>
+                </CollapsibleSection>
               </div>
 
               {/* Right Column - Habits Analytics */}
-              <div className="space-y-6">
-                <SectionCard title="Winning Habits" description="Patterns in your wins">
+              <div className="space-y-4">
+                <CollapsibleSection
+                  title="Winning Habits"
+                  description="Patterns in your wins"
+                  icon={TrendingUp}
+                  defaultOpen={true}
+                >
                   {isLoadingHabits ? (
                     <LoadingHabitsState />
                   ) : habitsError ? (
@@ -382,9 +443,14 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
                   ) : (
                     <EmptyHabitsState />
                   )}
-                </SectionCard>
+                </CollapsibleSection>
 
-                <SectionCard title="Losing Habits" description="Patterns in your losses">
+                <CollapsibleSection
+                  title="Losing Habits"
+                  description="Patterns in your losses"
+                  icon={TrendingDown}
+                  defaultOpen={true}
+                >
                   {isLoadingHabits ? (
                     <LoadingHabitsState />
                   ) : habitsError ? (
@@ -398,7 +464,7 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
                   ) : (
                     <EmptyHabitsState />
                   )}
-                </SectionCard>
+                </CollapsibleSection>
               </div>
             </div>
           </TabsContent>
