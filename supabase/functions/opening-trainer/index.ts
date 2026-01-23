@@ -19,7 +19,11 @@ serve(async (req) => {
     }
 
     const systemPrompt = `You are an expert chess coach helping a player practice their best openings.
-For each opening provided, generate exactly 3 different practice lines (variations) that the player should know.
+For each opening provided, generate 6-8 different practice lines (variations) that the player should know.
+Mark 2-3 of the most important lines as "recommended" based on:
+- Frequency in master games
+- Strategic importance
+- How well it fits the player's winning style
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -31,17 +35,26 @@ Respond ONLY with valid JSON in this exact format:
         {
           "name": "Giuoco Piano - Main Line",
           "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "c3", "Nf6", "d4"],
-          "keyIdea": "Control the center with d4 and develop pieces harmoniously"
+          "keyIdea": "Control the center with d4 and develop pieces harmoniously",
+          "recommended": true
         },
         {
           "name": "Evans Gambit",
           "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "b4", "Bxb4", "c3"],
-          "keyIdea": "Sacrifice a pawn for rapid development and attack"
+          "keyIdea": "Sacrifice a pawn for rapid development and attack",
+          "recommended": true
         },
         {
           "name": "Giuoco Pianissimo",
           "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "d3", "Nf6", "O-O"],
-          "keyIdea": "Slow, positional setup with a solid pawn structure"
+          "keyIdea": "Slow, positional setup with a solid pawn structure",
+          "recommended": false
+        },
+        {
+          "name": "Italian Game - Knight Attack",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "Ng5", "d5", "exd5"],
+          "keyIdea": "Aggressive knight jump targeting f7",
+          "recommended": false
         }
       ]
     }
@@ -50,19 +63,25 @@ Respond ONLY with valid JSON in this exact format:
 
 Each line should:
 - Have a descriptive name
-- Include 8-12 moves in standard algebraic notation
-- Have one key strategic idea`;
+- Include 8-14 moves in standard algebraic notation
+- Have one key strategic idea
+- Have a "recommended" boolean (true for 2-3 most important lines per opening)`;
 
     const colorContext = playerColor === 'white' ? 'as White' : 'as Black';
     
-    const userPrompt = `Generate 3 practice lines for each of these top openings the player uses ${colorContext}:
+    const userPrompt = `Generate 6-8 practice lines for each of these top openings the player uses ${colorContext}:
 
 ${topOpenings.map((o: any, i: number) => 
   `${i + 1}. ${o.label} (bucket: ${o.bucket}) - ${o.games} games, ${o.winRate.toFixed(0)}% win rate`
 ).join('\n')}
 
-For each opening, provide 3 different variations or lines that are commonly played and important to know.
-Make sure the lines are appropriate for the color (${playerColor}).`;
+For each opening:
+1. Provide 6-8 different variations or lines commonly played
+2. Mark 2-3 as "recommended" - these should be the most important lines to know
+3. Include both main lines and popular sidelines
+4. Make sure the lines are appropriate for ${playerColor}
+
+Sort the lines within each opening with recommended ones first.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -109,6 +128,18 @@ Make sure the lines are appropriate for the color (${playerColor}).`;
     }
 
     const result = JSON.parse(jsonMatch[0]);
+    
+    // Ensure recommended lines are sorted to the top within each opening
+    if (result.openings) {
+      result.openings = result.openings.map((opening: any) => ({
+        ...opening,
+        lines: opening.lines.sort((a: any, b: any) => {
+          if (a.recommended && !b.recommended) return -1;
+          if (!a.recommended && b.recommended) return 1;
+          return 0;
+        })
+      }));
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
