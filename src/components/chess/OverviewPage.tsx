@@ -68,7 +68,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
         onClick={() => onChange('white')}
         className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
           value === 'white' 
-            ? 'bg-white text-black border border-border' 
+            ? 'bg-primary text-primary-foreground' 
             : 'bg-muted text-muted-foreground hover:text-foreground'
         }`}
       >
@@ -78,7 +78,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
         onClick={() => onChange('black')}
         className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
           value === 'black' 
-            ? 'bg-zinc-800 text-white' 
+            ? 'bg-primary text-primary-foreground' 
             : 'bg-muted text-muted-foreground hover:text-foreground'
         }`}
       >
