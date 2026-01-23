@@ -12,6 +12,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { OverviewPage } from '@/components/chess/OverviewPage';
+import { RecentProgressPage } from '@/components/chess/RecentProgressPage';
 import { HabitsPage } from '@/components/chess/HabitsPage';
 import { OpeningTrainingPage } from '@/components/chess/OpeningTrainingPage';
 import { ExportPage } from '@/components/chess/ExportPage';
@@ -59,7 +60,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
 
   // Handle deep linking to specific views
   useEffect(() => {
-    if (viewParam && ['overview', 'habits', 'tactics', 'training', 'export', 'coaching'].includes(viewParam)) {
+    if (viewParam && ['overview', 'recent-progress', 'habits', 'tactics', 'training', 'export', 'coaching'].includes(viewParam)) {
       setCurrentView(viewParam);
     }
   }, [viewParam]);
@@ -135,6 +136,12 @@ const Index = ({ demoMode = false }: IndexProps) => {
     }
     if (currentView === 'overview') {
       return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={(view, context) => {
+        setCurrentView(view);
+        if (context) setCoachingContext(context);
+      }} />;
+    }
+    if (currentView === 'recent-progress') {
+      return <RecentProgressPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={(view, context) => {
         setCurrentView(view);
         if (context) setCoachingContext(context);
       }} />;
