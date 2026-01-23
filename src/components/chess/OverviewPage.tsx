@@ -111,134 +111,131 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
 
       {/* Tabbed Charts Section */}
       <div className="mt-6">
-        <Tabs defaultValue="frequency" className="w-full">
-          <TabsList className="mb-4">
+        <Tabs defaultValue="insights" className="w-full">
+          <TabsList className="mb-4 flex-wrap h-auto gap-1">
+            <TabsTrigger value="insights">Top Insights</TabsTrigger>
+            <TabsTrigger value="focus">Opening Focus</TabsTrigger>
             <TabsTrigger value="frequency">Opening Frequency</TabsTrigger>
             <TabsTrigger value="success">Success Rate</TabsTrigger>
             <TabsTrigger value="color">By Color</TabsTrigger>
             <TabsTrigger value="table">All Openings</TabsTrigger>
           </TabsList>
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Charts - 2 columns */}
-            <div className="lg:col-span-2">
-              <TabsContent value="frequency" className="mt-0">
-                <SectionCard title="Opening Frequency" description="Your most played openings">
+          <TabsContent value="insights" className="mt-0">
+            <TopInsights 
+              stats={stats} 
+              openingStats={openingStats}
+              onNavigate={onNavigate}
+            />
+          </TabsContent>
+
+          <TabsContent value="focus" className="mt-0">
+            <SectionCard
+              title="Opening Focus"
+              description="Quick takeaways from your games"
+              actions={<Sparkles className="h-4 w-4 text-muted-foreground" />}
+            >
+              <div className="space-y-5 max-w-2xl">
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground">MOST PLAYED</h4>
+                  <ul className="mt-2 space-y-1">
+                    {insights.mostPlayed.map((o) => (
+                      <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
+                        <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{o.games}g</span>
+                      </li>
+                    ))}
+                    {insights.mostPlayed.length === 0 && (
+                      <li className="text-sm text-muted-foreground">No games in the current filter.</li>
+                    )}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground">
+                    BEST SCORING (min {insights.minGames} games)
+                  </h4>
+                  <ul className="mt-2 space-y-1">
+                    {insights.best.map((o) => (
+                      <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
+                        <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{o.scorePercent.toFixed(0)}%</span>
+                      </li>
+                    ))}
+                    {insights.best.length === 0 && (
+                      <li className="text-sm text-muted-foreground">Play a few more games to surface trends.</li>
+                    )}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground">
+                    NEEDS WORK (min {insights.minGames} games)
+                  </h4>
+                  <ul className="mt-2 space-y-1">
+                    {insights.worst.map((o) => (
+                      <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
+                        <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{o.scorePercent.toFixed(0)}%</span>
+                      </li>
+                    ))}
+                    {insights.worst.length === 0 && (
+                      <li className="text-sm text-muted-foreground">Nothing stands out as weak yet.</li>
+                    )}
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <p className="text-sm text-foreground">
+                    Pick <span className="font-semibold">one White</span> and{' '}
+                    <span className="font-semibold">one Black</span> opening to repeat for your next 20 games. Consistency
+                    makes patterns obvious.
+                  </p>
+                </div>
+              </div>
+            </SectionCard>
+          </TabsContent>
+
+          <TabsContent value="frequency" className="mt-0">
+            <SectionCard title="Opening Frequency" description="Your most played openings">
+              <div className="h-[400px]">
+                <OpeningChart data={openingStats.slice(0, 10)} type="frequency" />
+              </div>
+            </SectionCard>
+          </TabsContent>
+
+          <TabsContent value="success" className="mt-0">
+            <SectionCard title="Opening Success Rate" description="Score % by opening">
+              <div className="h-[400px]">
+                <OpeningChart data={openingStats.slice(0, 10)} type="performance" />
+              </div>
+            </SectionCard>
+          </TabsContent>
+
+          <TabsContent value="color" className="mt-0">
+            <SectionCard title="Performance by Color" description="Which openings work best for you as White vs Black">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS WHITE</h4>
                   <div className="h-[320px]">
-                    <OpeningChart data={openingStats.slice(0, 10)} type="frequency" />
+                    <OpeningChart data={whiteOpeningStats.slice(0, 6)} type="performance" />
                   </div>
-                </SectionCard>
-              </TabsContent>
-
-              <TabsContent value="success" className="mt-0">
-                <SectionCard title="Opening Success Rate" description="Score % by opening">
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS BLACK</h4>
                   <div className="h-[320px]">
-                    <OpeningChart data={openingStats.slice(0, 10)} type="performance" />
+                    <OpeningChart data={blackOpeningStats.slice(0, 6)} type="performance" />
                   </div>
-                </SectionCard>
-              </TabsContent>
-
-              <TabsContent value="color" className="mt-0">
-                <SectionCard title="Performance by Color" description="Which openings work best for you as White vs Black">
-                  <div className="grid gap-6 lg:grid-cols-2">
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS WHITE</h4>
-                      <div className="h-[280px]">
-                        <OpeningChart data={whiteOpeningStats.slice(0, 6)} type="performance" />
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS BLACK</h4>
-                      <div className="h-[280px]">
-                        <OpeningChart data={blackOpeningStats.slice(0, 6)} type="performance" />
-                      </div>
-                    </div>
-                  </div>
-                </SectionCard>
-              </TabsContent>
-
-              <TabsContent value="table" className="mt-0">
-                <SectionCard title="All Openings" description="Full breakdown of your opening buckets">
-                  <OpeningTable data={openingStats} />
-                </SectionCard>
-              </TabsContent>
-            </div>
-
-            {/* Insights Panel - 1 column */}
-            <div className="space-y-6">
-              <TopInsights 
-                stats={stats} 
-                openingStats={openingStats}
-                onNavigate={onNavigate}
-              />
-
-          {/* Opening Insights */}
-          <SectionCard
-            title="Opening Focus"
-            description="Quick takeaways from your games"
-            actions={<Sparkles className="h-4 w-4 text-muted-foreground" />}
-          >
-            <div className="space-y-5">
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground">MOST PLAYED</h4>
-                <ul className="mt-2 space-y-1">
-                  {insights.mostPlayed.map((o) => (
-                    <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
-                      <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{o.games}g</span>
-                    </li>
-                  ))}
-                  {insights.mostPlayed.length === 0 && (
-                    <li className="text-sm text-muted-foreground">No games in the current filter.</li>
-                  )}
-                </ul>
+                </div>
               </div>
+            </SectionCard>
+          </TabsContent>
 
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground">
-                  BEST SCORING (min {insights.minGames} games)
-                </h4>
-                <ul className="mt-2 space-y-1">
-                  {insights.best.map((o) => (
-                    <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
-                      <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{o.scorePercent.toFixed(0)}%</span>
-                    </li>
-                  ))}
-                  {insights.best.length === 0 && (
-                    <li className="text-sm text-muted-foreground">Play a few more games to surface trends.</li>
-                  )}
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground">
-                  NEEDS WORK (min {insights.minGames} games)
-                </h4>
-                <ul className="mt-2 space-y-1">
-                  {insights.worst.map((o) => (
-                    <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
-                      <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{o.scorePercent.toFixed(0)}%</span>
-                    </li>
-                  ))}
-                  {insights.worst.length === 0 && (
-                    <li className="text-sm text-muted-foreground">Nothing stands out as weak yet.</li>
-                  )}
-                </ul>
-              </div>
-
-              <div className="rounded-lg border border-border bg-muted/30 p-4">
-                <p className="text-sm text-foreground">
-                  Pick <span className="font-semibold">one White</span> and{' '}
-                  <span className="font-semibold">one Black</span> opening to repeat for your next 20 games. Consistency
-                  makes patterns obvious.
-                </p>
-              </div>
-            </div>
-          </SectionCard>
-            </div>
-          </div>
+          <TabsContent value="table" className="mt-0">
+            <SectionCard title="All Openings" description="Full breakdown of your opening buckets">
+              <OpeningTable data={openingStats} />
+            </SectionCard>
+          </TabsContent>
         </Tabs>
       </div>
     </PageContainer>
