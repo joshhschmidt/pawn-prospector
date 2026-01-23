@@ -2,14 +2,22 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import type { PracticeLine } from './PracticeBoard';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  practiceLines?: ExtractedLine[];
+}
+
+interface ExtractedLine {
+  name: string;
+  moves: string[];
+  keyIdea: string;
 }
 
 interface PlayerStats {
@@ -32,6 +40,7 @@ interface CoachChatProps {
   username: string;
   initialContext?: string | null;
   onContextConsumed?: () => void;
+  onPracticeLineSelected?: (line: PracticeLine, color: 'white' | 'black') => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chess-coach`;
@@ -39,11 +48,11 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chess-coach`
 const SUGGESTED_QUESTIONS = [
   "What should I focus on to improve?",
   "Why am I losing games quickly?",
-  "Which opening should I study?",
+  "Suggest an opening line I can practice",
   "Create a training plan for me",
 ];
 
-export const CoachChat = ({ playerStats, username, initialContext, onContextConsumed }: CoachChatProps) => {
+export const CoachChat = ({ playerStats, username, initialContext, onContextConsumed, onPracticeLineSelected }: CoachChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +75,62 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
     }
   }, [initialContext, contextSent, messages.length]);
 
+  // Extract practice lines from AI response
+  const extractPracticeLines = (content: string): ExtractedLine[] => {
+    const lines: ExtractedLine[] = [];
+    
+    // Pattern 1: Look for numbered moves like "1. e4 e5 2. Nf3 Nc6..."
+    const moveSequencePattern = /(?:^|\n)(?:\*\*)?([^:*\n]+)(?:\*\*)?[:\s]*\n?\s*((?:\d+\.\s*[A-Za-z][a-zA-Z0-9+#=]*\s+[A-Za-z][a-zA-Z0-9+#=]*\s*)+)/gm;
+    
+    let match;
+    while ((match = moveSequencePattern.exec(content)) !== null) {
+      const name = match[1].trim().replace(/\*\*/g, '');
+      const moveString = match[2];
+      
+      // Parse moves from "1. e4 e5 2. Nf3 Nc6" format
+      const moves: string[] = [];
+      const movePattern = /\d+\.\s*([A-Za-z][a-zA-Z0-9+#=x]*)\s+([A-Za-z][a-zA-Z0-9+#=x]*)/g;
+      let moveMatch;
+      while ((moveMatch = movePattern.exec(moveString)) !== null) {
+        moves.push(moveMatch[1], moveMatch[2]);
+      }
+      
+      if (moves.length >= 4) {
+        lines.push({
+          name,
+          moves,
+          keyIdea: `Practice the ${name} opening line`
+        });
+      }
+    }
+    
+    // Pattern 2: Look for moves in parentheses or after a colon
+    const inlinePattern = /(?:\*\*)?([^*\n:]+)(?:\*\*)?:\s*\(?(\s*\d+\.\s*[A-Za-z][a-zA-Z0-9+#=x\s.]+)\)?/g;
+    
+    while ((match = inlinePattern.exec(content)) !== null) {
+      const name = match[1].trim().replace(/\*\*/g, '');
+      const moveString = match[2];
+      
+      const moves: string[] = [];
+      const movePattern = /\d+\.\s*([A-Za-z][a-zA-Z0-9+#=x]*)\s*([A-Za-z][a-zA-Z0-9+#=x]*)?/g;
+      let moveMatch;
+      while ((moveMatch = movePattern.exec(moveString)) !== null) {
+        moves.push(moveMatch[1]);
+        if (moveMatch[2]) moves.push(moveMatch[2]);
+      }
+      
+      if (moves.length >= 4 && !lines.some(l => l.name === name)) {
+        lines.push({
+          name,
+          moves,
+          keyIdea: `Practice the ${name} opening line`
+        });
+      }
+    }
+    
+    return lines.slice(0, 3); // Limit to 3 practice lines
+  };
+
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
@@ -78,14 +143,15 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
 
     const updateAssistant = (chunk: string) => {
       assistantContent += chunk;
+      const practiceLines = extractPracticeLines(assistantContent);
       setMessages(prev => {
         const last = prev[prev.length - 1];
         if (last?.role === 'assistant') {
           return prev.map((m, i) => 
-            i === prev.length - 1 ? { ...m, content: assistantContent } : m
+            i === prev.length - 1 ? { ...m, content: assistantContent, practiceLines } : m
           );
         }
-        return [...prev, { role: 'assistant', content: assistantContent }];
+        return [...prev, { role: 'assistant', content: assistantContent, practiceLines }];
       });
     };
 
@@ -244,6 +310,30 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
                     )}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    
+                    {/* Practice Line Buttons */}
+                    {message.role === 'assistant' && message.practiceLines && message.practiceLines.length > 0 && onPracticeLineSelected && (
+                      <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Practice these lines:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {message.practiceLines.map((line, lineIndex) => (
+                            <Button
+                              key={lineIndex}
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1 bg-background/50 hover:bg-primary/10"
+                              onClick={() => onPracticeLineSelected(
+                                { ...line, recommended: false },
+                                'white' // Default to white, user can change with tabs
+                              )}
+                            >
+                              <Play className="h-3 w-3" />
+                              {line.name.length > 20 ? line.name.slice(0, 20) + '...' : line.name}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {message.role === 'user' && (
                     <div className="rounded-full bg-primary/20 p-2 h-8 w-8 flex items-center justify-center shrink-0">

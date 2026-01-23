@@ -66,6 +66,12 @@ Guidelines:
 - Suggest specific opening choices based on their performance data
 - Address common amateur mistakes like early queen moves, delayed castling, etc.
 
+IMPORTANT - When suggesting opening lines to practice:
+- Always format the moves clearly with move numbers like: 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5
+- Include the opening name before the moves, like: **Italian Game Main Line**: 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4
+- Provide at least 4-5 moves (8-10 half-moves) for each line
+- The player can practice these lines on the chessboard next to the chat
+
 If asked about their openings, reference their actual performance data. If asked for a training plan, create one based on their weaknesses.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
