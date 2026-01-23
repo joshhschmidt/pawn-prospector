@@ -20,6 +20,7 @@ import { ExportPage } from '@/components/chess/ExportPage';
 import { CoachingConversationsPage } from '@/components/chess/CoachingConversationsPage';
 import { EmptyState, LoadingState } from '@/components/chess/EmptyLoadingStates';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Upload } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -35,6 +36,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [currentView, setCurrentView] = useState('overview');
   const [coachingContext, setCoachingContext] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({
@@ -68,6 +70,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
 
   const handleUsernameImport = async (importUsername: string, dateRange: number, maxGames: number) => {
     setIsLoading(true);
+    setShowImportDialog(false);
     try {
       const fetchedGames = await fetchChessComGames(importUsername, dateRange, maxGames);
       setGames(fetchedGames);
@@ -83,6 +86,10 @@ const Index = ({ demoMode = false }: IndexProps) => {
     setShowDashboard(true);
     setCurrentView('overview');
     setIsLoading(false);
+  };
+
+  const handleReimport = () => {
+    setShowImportDialog(true);
   };
 
   const handlePGNUpload = async (files: File[]) => {
@@ -212,7 +219,13 @@ const Index = ({ demoMode = false }: IndexProps) => {
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar username={username} onBack={handleBack} currentView={currentView} onViewChange={setCurrentView} />
+        <AppSidebar 
+          username={username} 
+          onBack={handleBack} 
+          currentView={currentView} 
+          onViewChange={setCurrentView}
+          onRefresh={handleReimport}
+        />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="sticky top-0 z-40 h-14 border-b border-border bg-background/95 backdrop-blur">
             <div className="flex h-full items-center gap-4 px-4 lg:px-6">
@@ -231,6 +244,19 @@ const Index = ({ demoMode = false }: IndexProps) => {
           </main>
         </div>
       </div>
+
+      {/* Re-import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Re-import Games</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 md:grid-cols-2 pt-4">
+            <UsernameImport onImport={handleUsernameImport} isLoading={isLoading} />
+            <PGNUpload onUpload={handlePGNUpload} isLoading={isLoading} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 };
