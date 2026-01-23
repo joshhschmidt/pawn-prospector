@@ -21,6 +21,20 @@ const getMoves = (opening: OpeningBucket): string[] => {
   return [...baseMoves];
 };
 
+// Realistic opponent names
+const OPPONENT_NAMES = [
+  'ChessMaster2024', 'KnightRider99', 'QueenSlayer', 'PawnStorm', 'Checkmate_King',
+  'BishopSniper', 'RookDestroyer', 'CastleKnight', 'SicilianDragon', 'FrenchDefender',
+  'GrandmasterAlex', 'TacticalGenius', 'EndgameExpert', 'BlitzKing', 'RapidQueen',
+  'OpeningTheory', 'MiddlegameMaster', 'PositionalPro', 'AttackMode', 'DefensiveWall',
+  'ChessNinja', 'SilentKnight', 'DarkBishop', 'WhiteRook', 'BlackPawn',
+  'ViennaGambit', 'LondonPlayer', 'KingsIndian', 'QueensGambit', 'CaroKannFan',
+  'ItalianStyle', 'SpanishOpening', 'ScotchWhiskey', 'DragonSlayer', 'NajdorfLover',
+  'TacticalStrike', 'StrategicMind', 'ChessWizard', 'BoardMaster', 'MoveGenius',
+  'KingHunter', 'QueenTrapper', 'ForkMaster', 'PinExpert', 'SkeweredKing',
+  'DoubleCheck', 'DiscoveredAttack', 'ZwischenzugPro', 'TempoGainer', 'SpaceMaster'
+];
+
 // Generate realistic demo data for showcasing the analysis
 const generateDemoGame = (
   index: number,
@@ -36,6 +50,7 @@ const generateDemoGame = (
   const moves = getMoves(opening);
   const totalMoves = Math.ceil(moves.length / 2);
   const quickGame = totalMoves <= 15;
+  const opponentName = OPPONENT_NAMES[index % OPPONENT_NAMES.length];
   
   return {
     id: `demo-${index}`,
@@ -44,7 +59,7 @@ const generateDemoGame = (
     time_control: timeControl,
     player_color: color,
     result,
-    opponent_name: `Opponent${Math.floor(Math.random() * 1000)}`,
+    opponent_name: opponentName,
     opponent_rating: 1200 + Math.floor(Math.random() * 600),
     player_rating: 1400 + Math.floor(Math.random() * 200),
     total_moves: totalMoves,
