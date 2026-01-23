@@ -3,111 +3,111 @@
 @tailwind utilities;
 
 /* Chess Coach Analyzer Design System
-   Theme: Deep forest greens with warm amber accents
+   Theme: Deep ocean blue with warm amber accents
    Inspired by: Premium analytics dashboards + classic chess aesthetics
 */
 
 @layer base {
   :root {
     /* Core backgrounds - dark, sophisticated */
-    --background: 160 20% 6%;
-    --foreground: 45 20% 95%;
+    --background: 220 25% 6%;
+    --foreground: 210 20% 95%;
 
     /* Card surfaces - slightly elevated */
-    --card: 160 15% 10%;
-    --card-foreground: 45 20% 95%;
+    --card: 220 20% 10%;
+    --card-foreground: 210 20% 95%;
 
     /* Popover surfaces */
-    --popover: 160 15% 8%;
-    --popover-foreground: 45 20% 95%;
+    --popover: 220 20% 8%;
+    --popover-foreground: 210 20% 95%;
 
-    /* Primary - Deep forest green */
-    --primary: 153 50% 30%;
-    --primary-foreground: 45 30% 97%;
+    /* Primary - Deep ocean blue */
+    --primary: 210 70% 45%;
+    --primary-foreground: 210 30% 97%;
 
-    /* Secondary - Muted green-gray */
-    --secondary: 160 15% 18%;
-    --secondary-foreground: 45 15% 90%;
+    /* Secondary - Muted blue-gray */
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 210 15% 90%;
 
     /* Muted surfaces */
-    --muted: 160 10% 15%;
-    --muted-foreground: 45 10% 60%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 210 10% 60%;
 
     /* Accent - Warm amber/gold */
     --accent: 38 70% 50%;
-    --accent-foreground: 160 30% 8%;
+    --accent-foreground: 220 30% 8%;
 
     /* Destructive - Warm red */
     --destructive: 0 65% 50%;
-    --destructive-foreground: 45 30% 97%;
+    --destructive-foreground: 210 30% 97%;
 
-    /* Success - Bright green */
-    --success: 145 60% 45%;
-    --success-foreground: 160 30% 8%;
+    /* Success - Bright teal */
+    --success: 160 60% 45%;
+    --success-foreground: 220 30% 8%;
 
     /* Warning - Amber */
     --warning: 38 90% 55%;
-    --warning-foreground: 160 30% 8%;
+    --warning-foreground: 220 30% 8%;
 
     /* Borders and inputs */
-    --border: 160 15% 20%;
-    --input: 160 15% 20%;
-    --ring: 153 50% 40%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 210 70% 50%;
 
     --radius: 0.75rem;
 
     /* Chess-specific colors */
-    --chess-white: 45 25% 90%;
-    --chess-black: 160 20% 12%;
-    --chess-win: 145 60% 45%;
+    --chess-white: 210 25% 90%;
+    --chess-black: 220 20% 12%;
+    --chess-win: 160 60% 45%;
     --chess-loss: 0 65% 50%;
-    --chess-draw: 45 10% 50%;
+    --chess-draw: 210 10% 50%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(153 50% 30%), hsl(160 40% 25%));
+    --gradient-primary: linear-gradient(135deg, hsl(210 70% 45%), hsl(220 60% 35%));
     --gradient-accent: linear-gradient(135deg, hsl(38 70% 50%), hsl(30 80% 45%));
-    --gradient-card: linear-gradient(180deg, hsl(160 15% 12%), hsl(160 15% 8%));
-    --gradient-hero: linear-gradient(135deg, hsl(160 20% 6%) 0%, hsl(153 30% 12%) 50%, hsl(160 20% 6%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220 20% 12%), hsl(220 20% 8%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 25% 6%) 0%, hsl(210 35% 12%) 50%, hsl(220 25% 6%) 100%);
 
     /* Shadows */
     --shadow-sm: 0 2px 8px -2px hsla(0 0% 0% / 0.3);
     --shadow-md: 0 4px 16px -4px hsla(0 0% 0% / 0.4);
     --shadow-lg: 0 8px 32px -8px hsla(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 20px -5px hsla(153 50% 40% / 0.3);
+    --shadow-glow: 0 0 20px -5px hsla(210 70% 50% / 0.3);
     --shadow-accent: 0 0 20px -5px hsla(38 70% 50% / 0.3);
 
     /* Sidebar */
-    --sidebar-background: 160 15% 8%;
-    --sidebar-foreground: 45 15% 85%;
-    --sidebar-primary: 153 50% 35%;
-    --sidebar-primary-foreground: 45 30% 97%;
-    --sidebar-accent: 160 15% 15%;
-    --sidebar-accent-foreground: 45 15% 90%;
-    --sidebar-border: 160 15% 18%;
-    --sidebar-ring: 153 50% 40%;
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 210 15% 85%;
+    --sidebar-primary: 210 70% 50%;
+    --sidebar-primary-foreground: 210 30% 97%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 210 15% 90%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 210 70% 50%;
   }
 
   /* Light mode - kept for compatibility but dark is default */
   .light {
-    --background: 45 20% 97%;
-    --foreground: 160 30% 10%;
+    --background: 210 20% 97%;
+    --foreground: 220 30% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 160 30% 10%;
+    --card-foreground: 220 30% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 160 30% 10%;
-    --primary: 153 50% 30%;
-    --primary-foreground: 45 30% 97%;
-    --secondary: 160 10% 92%;
-    --secondary-foreground: 160 30% 15%;
-    --muted: 160 10% 94%;
-    --muted-foreground: 160 15% 40%;
+    --popover-foreground: 220 30% 10%;
+    --primary: 210 70% 45%;
+    --primary-foreground: 210 30% 97%;
+    --secondary: 220 10% 92%;
+    --secondary-foreground: 220 30% 15%;
+    --muted: 220 10% 94%;
+    --muted-foreground: 220 15% 40%;
     --accent: 38 70% 50%;
-    --accent-foreground: 160 30% 8%;
+    --accent-foreground: 220 30% 8%;
     --destructive: 0 65% 50%;
-    --destructive-foreground: 45 30% 97%;
-    --border: 160 15% 88%;
-    --input: 160 15% 88%;
-    --ring: 153 50% 35%;
+    --destructive-foreground: 210 30% 97%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 210 70% 45%;
   }
 }
 
@@ -146,7 +146,7 @@
   .stat-card::before {
     content: '';
     @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsla(153 50% 40% / 0.08), transparent 50%);
+    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsla(210 70% 50% / 0.08), transparent 50%);
   }
 
   .stat-card:hover::before {
@@ -166,7 +166,7 @@
 
   /* Glow text effect */
   .glow-text {
-    text-shadow: 0 0 20px hsla(153 50% 50% / 0.5);
+    text-shadow: 0 0 20px hsla(210 70% 60% / 0.5);
   }
 
   /* Accent glow text */
@@ -227,10 +227,10 @@
 
   @keyframes pulse-glow {
     0%, 100% {
-      box-shadow: 0 0 20px -5px hsla(153 50% 40% / 0.3);
+      box-shadow: 0 0 20px -5px hsla(210 70% 50% / 0.3);
     }
     50% {
-      box-shadow: 0 0 30px -5px hsla(153 50% 50% / 0.5);
+      box-shadow: 0 0 30px -5px hsla(210 70% 60% / 0.5);
     }
   }
 }
