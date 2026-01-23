@@ -5,24 +5,27 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, Loader2, Lightbulb } from 'lucide-react';
+import { TrendingUp, TrendingDown, Loader2, Lightbulb, ChevronDown, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
 
 interface HabitsPageProps {
   games: Game[];
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
+  onNavigate?: (view: string) => void;
 }
 
 interface HabitInsight {
   title: string;
   description: string;
   frequency: string;
+  detailedExplanation?: string;
 }
 
 type ColorFilter = 'all' | PlayerColor;
 
-export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps) => {
+export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: HabitsPageProps) => {
   const [winningColorFilter, setWinningColorFilter] = useState<ColorFilter>('all');
   const [losingColorFilter, setLosingColorFilter] = useState<ColorFilter>('all');
   const [winningAnalysis, setWinningAnalysis] = useState<HabitInsight[] | null>(null);
@@ -31,6 +34,8 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
   const [isLoadingLosing, setIsLoadingLosing] = useState(false);
   const [winningError, setWinningError] = useState<string | null>(null);
   const [losingError, setLosingError] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   
   const filteredGames = filterGames(games, filters);
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
@@ -144,6 +149,49 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
     }
   };
 
+  const generateDetailedExplanation = async (cardKey: string, insight: HabitInsight, type: 'winning' | 'losing') => {
+    setLoadingDetails(prev => ({ ...prev, [cardKey]: true }));
+    
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('analyze-habits', {
+        body: { 
+          detailRequest: true,
+          habitTitle: insight.title,
+          habitDescription: insight.description,
+          habitType: type
+        }
+      });
+
+      if (fnError) throw fnError;
+      
+      const detailedExplanation = data?.detailedExplanation || 'Unable to generate detailed explanation.';
+      
+      if (type === 'winning') {
+        setWinningAnalysis(prev => prev?.map((h, i) => 
+          `winning-${i}` === cardKey ? { ...h, detailedExplanation } : h
+        ) || null);
+      } else {
+        setLosingAnalysis(prev => prev?.map((h, i) => 
+          `losing-${i}` === cardKey ? { ...h, detailedExplanation } : h
+        ) || null);
+      }
+      
+      setExpandedCards(prev => ({ ...prev, [cardKey]: true }));
+    } catch (err) {
+      console.error('Error generating detailed explanation:', err);
+    } finally {
+      setLoadingDetails(prev => ({ ...prev, [cardKey]: false }));
+    }
+  };
+
+  const toggleExpanded = (cardKey: string, insight: HabitInsight, type: 'winning' | 'losing') => {
+    if (!insight.detailedExplanation && !expandedCards[cardKey]) {
+      generateDetailedExplanation(cardKey, insight, type);
+    } else {
+      setExpandedCards(prev => ({ ...prev, [cardKey]: !prev[cardKey] }));
+    }
+  };
+
   useEffect(() => {
     if (filteredGames.length > 0) {
       analyzeWinningHabits();
@@ -156,22 +204,70 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
     }
   }, [filteredGames.length, filters, losingColorFilter]);
 
-  const HabitCard = ({ insight, index }: { insight: HabitInsight; index: number }) => (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-      <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-          {index + 1}
+  const HabitCard = ({ insight, index, type }: { insight: HabitInsight; index: number; type: 'winning' | 'losing' }) => {
+    const cardKey = `${type}-${index}`;
+    const isExpanded = expandedCards[cardKey];
+    const isLoadingDetail = loadingDetails[cardKey];
+    
+    return (
+      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+            {index + 1}
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground">{insight.title}</h3>
+            <p className="text-xs text-muted-foreground mt-1">{insight.frequency}</p>
+          </div>
         </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground">{insight.title}</h3>
-          <p className="text-xs text-muted-foreground mt-1">{insight.frequency}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed pl-11">
+          {insight.description}
+        </p>
+        
+        {/* Expanded Details */}
+        {isExpanded && insight.detailedExplanation && (
+          <div className="pl-11 pt-2 border-t border-border mt-3">
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+              {insight.detailedExplanation}
+            </p>
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 pl-11 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => toggleExpanded(cardKey, insight, type)}
+            disabled={isLoadingDetail}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            {isLoadingDetail ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                {isExpanded ? 'Show Less' : 'More Details'}
+              </>
+            )}
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onNavigate?.('coaching')}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <MessageCircle className="h-4 w-4 mr-1" />
+            Discuss
+          </Button>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground leading-relaxed pl-11">
-        {insight.description}
-      </p>
-    </div>
-  );
+    );
+  };
 
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -200,10 +296,10 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
     value: ColorFilter; 
     onChange: (val: ColorFilter) => void;
   }) => (
-    <div className="flex gap-2 mb-4">
+    <div className="grid grid-cols-3 gap-2 mb-4">
       <button
         onClick={() => onChange('all')}
-        className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+        className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
           value === 'all' 
             ? 'bg-primary text-primary-foreground' 
             : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -213,7 +309,7 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
       </button>
       <button
         onClick={() => onChange('white')}
-        className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+        className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
           value === 'white' 
             ? 'bg-primary text-primary-foreground' 
             : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -223,7 +319,7 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
       </button>
       <button
         onClick={() => onChange('black')}
-        className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+        className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
           value === 'black' 
             ? 'bg-primary text-primary-foreground' 
             : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -274,7 +370,7 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
                 Common tactics that create decisive evaluation swings in your favor
               </p>
               {winningAnalysis.map((insight, index) => (
-                <HabitCard key={index} insight={insight} index={index} />
+                <HabitCard key={index} insight={insight} index={index} type="winning" />
               ))}
             </div>
           ) : (
@@ -295,7 +391,7 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
                 Common patterns that lead to decisive evaluation swings against you
               </p>
               {losingAnalysis.map((insight, index) => (
-                <HabitCard key={index} insight={insight} index={index} />
+                <HabitCard key={index} insight={insight} index={index} type="losing" />
               ))}
             </div>
           ) : (
