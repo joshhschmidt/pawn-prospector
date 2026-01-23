@@ -40,24 +40,24 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
   };
 
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-[420px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          margin={{ top: 20, right: 20, left: 20, bottom: 60 }}
+          margin={{ top: 20, right: 30, left: 30, bottom: 100 }}
         >
           <XAxis
             dataKey="name"
-            tick={{ fill: 'hsl(var(--foreground))', fontSize: 11, fontWeight: 500 }}
+            tick={{ fill: 'hsl(var(--foreground))', fontSize: 14, fontWeight: 500 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
             angle={-35}
             textAnchor="end"
-            height={90}
+            height={110}
             interval={0}
           />
           <YAxis
-            tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
+            tick={{ fill: 'hsl(var(--foreground))', fontSize: 14, fontWeight: 500 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
             label={{
@@ -65,8 +65,8 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
               angle: -90,
               position: 'insideLeft',
               fill: 'hsl(var(--foreground))',
-              fontSize: 13,
-              fontWeight: 500,
+              fontSize: 14,
+              fontWeight: 600,
             }}
           />
           <Tooltip content={<CustomTooltip />} />
