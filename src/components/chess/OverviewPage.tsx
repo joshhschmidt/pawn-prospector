@@ -1,11 +1,10 @@
 import { Game, FilterState, OpeningBucket, OPENING_LABELS } from '@/types/chess';
-import { filterGames, calculateStats, calculateOpeningStats, calculateScoreOverTime } from '@/lib/analysis';
+import { filterGames, calculateStats, calculateOpeningStats } from '@/lib/analysis';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
 import { KPIGrid, KPICard } from './KPICard';
 import { OpeningChart } from './OpeningChart';
-import { ScoreChart } from './ScoreChart';
 import { TopInsights } from './TopInsights';
 import { Trophy, Target, Clock, Shield, Crown, Percent } from 'lucide-react';
 
@@ -20,7 +19,6 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
   const filteredGames = filterGames(games, filters);
   const stats = calculateStats(filteredGames);
   const openingStats = calculateOpeningStats(filteredGames);
-  const scoreOverTime = calculateScoreOverTime(filteredGames);
   
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
 
@@ -96,20 +94,6 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
             <h3 className="text-sm font-semibold text-foreground mb-4">Opening Frequency</h3>
             <div className="h-[280px]">
               <OpeningChart data={openingStats.slice(0, 8)} type="frequency" />
-            </div>
-          </div>
-          
-          {/* Score Over Time Chart */}
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Score % Over Time</h3>
-            <div className="h-[280px]">
-              {scoreOverTime.length > 1 ? (
-                <ScoreChart data={scoreOverTime} />
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                  Not enough data for timeline
-                </div>
-              )}
             </div>
           </div>
         </div>
