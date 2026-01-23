@@ -1,0 +1,232 @@
+import { useState, useEffect } from 'react';
+import { Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+interface OpeningData {
+  bucket: string;
+  games: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  scorePercent: number;
+}
+
+interface ChartInsightsProps {
+  chartType: 'frequency' | 'success' | 'color';
+  openingStats: OpeningData[];
+  whiteStats?: OpeningData[];
+  blackStats?: OpeningData[];
+  totalGames: number;
+}
+
+const OPENING_LABELS: Record<string, string> = {
+  italian_game: "Italian Game",
+  ruy_lopez: "Ruy Lopez",
+  scotch_game: "Scotch Game",
+  kings_gambit: "King's Gambit",
+  vienna_game: "Vienna Game",
+  london_system: "London System",
+  queens_gambit: "Queen's Gambit",
+  sicilian_najdorf: "Sicilian Najdorf",
+  sicilian_dragon: "Sicilian Dragon",
+  french_defense: "French Defense",
+  caro_kann: "Caro-Kann",
+  kings_indian: "King's Indian",
+  // Add more as needed, fallback to bucket name
+};
+
+export const ChartInsights = ({ 
+  chartType, 
+  openingStats, 
+  whiteStats, 
+  blackStats, 
+  totalGames 
+}: ChartInsightsProps) => {
+  const [insight, setInsight] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasGenerated, setHasGenerated] = useState(false);
+
+  const generateInsights = async () => {
+    if (openingStats.length === 0) {
+      setError('No opening data available to analyze');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setInsight('');
+
+    try {
+      const statsWithLabels = openingStats.map(o => ({
+        ...o,
+        label: OPENING_LABELS[o.bucket] || o.bucket.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      }));
+
+      const whiteWithLabels = whiteStats?.map(o => ({
+        ...o,
+        label: OPENING_LABELS[o.bucket] || o.bucket.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      }));
+
+      const blackWithLabels = blackStats?.map(o => ({
+        ...o,
+        label: OPENING_LABELS[o.bucket] || o.bucket.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      }));
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chart-insights`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            chartType,
+            openingStats: statsWithLabels,
+            whiteStats: whiteWithLabels,
+            blackStats: blackWithLabels,
+            totalGames,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast.error('Rate limit exceeded. Please wait a moment and try again.');
+          setError('Rate limit exceeded. Please try again later.');
+          return;
+        }
+        if (response.status === 402) {
+          toast.error('AI credits exhausted. Please add credits to continue.');
+          setError('AI credits exhausted.');
+          return;
+        }
+        throw new Error('Failed to generate insights');
+      }
+
+      if (!response.body) throw new Error('No response body');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              fullText += content;
+              setInsight(fullText);
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+
+      setHasGenerated(true);
+    } catch (err) {
+      console.error('Failed to generate insights:', err);
+      setError('Failed to generate insights. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Reset when chart type or data changes
+  useEffect(() => {
+    setInsight('');
+    setHasGenerated(false);
+    setError(null);
+  }, [chartType, totalGames]);
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mt-4">
+        <div className="flex items-center gap-2 text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">{error}</span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={generateInsights}
+          className="mt-2"
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!hasGenerated && !isLoading) {
+    return (
+      <div className="rounded-lg border border-border bg-muted/30 p-4 mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={generateInsights}
+          disabled={openingStats.length === 0}
+          className="gap-2"
+        >
+          <Sparkles className="h-4 w-4" />
+          Generate AI Insights
+        </Button>
+        <p className="text-xs text-muted-foreground mt-2">
+          Get personalized analysis of this chart data
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium text-foreground">AI Analysis</span>
+        </div>
+        {hasGenerated && !isLoading && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={generateInsights}
+            className="h-7 px-2"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+      <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+        {insight || (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            Analyzing your data...
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

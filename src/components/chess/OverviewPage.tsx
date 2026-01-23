@@ -9,6 +9,7 @@ import { StickyFilterBar } from './StickyFilterBar';
 import { KPIGrid, KPICard } from './KPICard';
 import { OpeningChart } from './OpeningChart';
 import { OpeningTable } from './OpeningTable';
+import { ChartInsights } from './ChartInsights';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface OverviewPageProps {
@@ -108,6 +109,11 @@ export const OverviewPage = ({ games, filters, onFiltersChange }: OverviewPagePr
               <div className="h-[400px]">
                 <OpeningChart data={openingStats.slice(0, 10)} type="frequency" />
               </div>
+              <ChartInsights
+                chartType="frequency"
+                openingStats={openingStats}
+                totalGames={stats.totalGames}
+              />
             </SectionCard>
           </TabsContent>
 
@@ -116,6 +122,11 @@ export const OverviewPage = ({ games, filters, onFiltersChange }: OverviewPagePr
               <div className="h-[400px]">
                 <OpeningChart data={openingStats.slice(0, 10)} type="performance" />
               </div>
+              <ChartInsights
+                chartType="success"
+                openingStats={openingStats}
+                totalGames={stats.totalGames}
+              />
             </SectionCard>
           </TabsContent>
 
@@ -135,6 +146,13 @@ export const OverviewPage = ({ games, filters, onFiltersChange }: OverviewPagePr
                   </div>
                 </div>
               </div>
+              <ChartInsights
+                chartType="color"
+                openingStats={openingStats}
+                whiteStats={whiteOpeningStats}
+                blackStats={blackOpeningStats}
+                totalGames={stats.totalGames}
+              />
             </SectionCard>
           </TabsContent>
 
