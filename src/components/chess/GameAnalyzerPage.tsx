@@ -230,6 +230,38 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
               </div>
             </CardHeader>
             <CardContent>
+              {/* Move list - above board for easy visibility */}
+              <div className="mb-4 pb-4 border-b border-border">
+                <p className="text-sm font-medium text-foreground mb-2">Move List</p>
+                <ScrollArea className="h-24">
+                  <div className="flex flex-wrap gap-1">
+                    {selectedGame.moves?.map((move, idx) => {
+                      const isWhite = idx % 2 === 0;
+                      const moveNum = Math.floor(idx / 2) + 1;
+                      const isCurrentMove = idx === currentMoveIndex;
+                      const isCriticalMove = idx === (expandedMoment.moveNumber - 1) * 2 + (expandedMoment.playerColor === 'black' ? 1 : 0);
+                      
+                      return (
+                        <span key={idx} className="inline-flex items-center">
+                          {isWhite && <span className="text-muted-foreground mr-1">{moveNum}.</span>}
+                          <button
+                            onClick={() => setCurrentMoveIndex(idx)}
+                            className={cn(
+                              'px-1.5 py-0.5 rounded text-sm transition-colors',
+                              isCurrentMove && 'bg-primary text-primary-foreground',
+                              isCriticalMove && !isCurrentMove && 'bg-destructive/20 text-destructive font-medium',
+                              !isCurrentMove && !isCriticalMove && 'hover:bg-muted'
+                            )}
+                          >
+                            {move}
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </div>
+
               <div className="aspect-square max-w-2xl mx-auto">
                 <Chessboard
                   position={getCurrentFen()}
@@ -273,38 +305,6 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
                 >
                   <ChevronRightIcon className="h-4 w-4" />
                 </Button>
-              </div>
-
-              {/* Move list - below navigation for easy access */}
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-sm font-medium text-foreground mb-2">Move List</p>
-                <ScrollArea className="h-24">
-                  <div className="flex flex-wrap gap-1">
-                    {selectedGame.moves?.map((move, idx) => {
-                      const isWhite = idx % 2 === 0;
-                      const moveNum = Math.floor(idx / 2) + 1;
-                      const isCurrentMove = idx === currentMoveIndex;
-                      const isCriticalMove = idx === (expandedMoment.moveNumber - 1) * 2 + (expandedMoment.playerColor === 'black' ? 1 : 0);
-                      
-                      return (
-                        <span key={idx} className="inline-flex items-center">
-                          {isWhite && <span className="text-muted-foreground mr-1">{moveNum}.</span>}
-                          <button
-                            onClick={() => setCurrentMoveIndex(idx)}
-                            className={cn(
-                              'px-1.5 py-0.5 rounded text-sm transition-colors',
-                              isCurrentMove && 'bg-primary text-primary-foreground',
-                              isCriticalMove && !isCurrentMove && 'bg-destructive/20 text-destructive font-medium',
-                              !isCurrentMove && !isCriticalMove && 'hover:bg-muted'
-                            )}
-                          >
-                            {move}
-                          </button>
-                        </span>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
               </div>
             </CardContent>
           </Card>
