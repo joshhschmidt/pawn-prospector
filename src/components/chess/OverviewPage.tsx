@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Trophy, Target, Clock, Shield, Crown, Percent } from 'lucide-react';
+import { Trophy, Target, XCircle, Minus } from 'lucide-react';
 import { Game, FilterState, OpeningBucket } from '@/types/chess';
 import { filterGames, calculateStats, calculateOpeningStats } from '@/lib/analysis';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -38,14 +38,6 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
   
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
 
-  // Calculate queen before castle percentage
-  const gamesWithData = filteredGames.filter(g => g.queen_moves_first_10 !== null && g.castled_at_ply !== null);
-  const queenBeforeCastle = gamesWithData.filter(g => 
-    (g.queen_moves_first_10 || 0) > 0 && (g.castled_at_ply || 999) > 10
-  ).length;
-  const queenBeforeCastlePercent = gamesWithData.length > 0 
-    ? (queenBeforeCastle / gamesWithData.length) * 100 
-    : 0;
 
   // Helper to get stats based on color filter
   const getStatsForColor = (color: ColorFilter) => {
@@ -110,34 +102,21 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
           icon={<Target className="h-5 w-5" />}
         />
         <KPICard
-          title="Score %"
-          value={`${stats.scorePercent.toFixed(1)}%`}
-          variant={stats.scorePercent >= 50 ? 'success' : stats.scorePercent >= 40 ? 'warning' : 'danger'}
-          icon={<Percent className="h-5 w-5" />}
-        />
-        <KPICard
           title="Wins"
           value={stats.wins}
-          subtitle={`${stats.draws} draws, ${stats.losses} losses`}
           variant="success"
           icon={<Trophy className="h-5 w-5" />}
         />
         <KPICard
-          title="Avg Game Length"
-          value={`${stats.avgGameLength} moves`}
-          icon={<Clock className="h-5 w-5" />}
+          title="Losses"
+          value={stats.losses}
+          variant="danger"
+          icon={<XCircle className="h-5 w-5" />}
         />
         <KPICard
-          title="Queen Before Castle"
-          value={`${queenBeforeCastlePercent.toFixed(0)}%`}
-          variant={queenBeforeCastlePercent > 30 ? 'warning' : 'default'}
-          icon={<Crown className="h-5 w-5" />}
-        />
-        <KPICard
-          title="Avg Castle Move"
-          value={stats.avgCastlingPly > 0 ? `Move ${Math.round(stats.avgCastlingPly / 2)}` : 'N/A'}
-          variant={stats.avgCastlingPly <= 12 ? 'success' : stats.avgCastlingPly <= 16 ? 'warning' : 'danger'}
-          icon={<Shield className="h-5 w-5" />}
+          title="Draws"
+          value={stats.draws}
+          icon={<Minus className="h-5 w-5" />}
         />
       </KPIGrid>
 
