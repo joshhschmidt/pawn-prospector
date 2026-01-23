@@ -49,8 +49,8 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
           <XAxis
             dataKey="name"
             tick={{ fill: 'hsl(var(--foreground))', fontSize: 14, fontWeight: 500 }}
-            axisLine={{ stroke: 'white', strokeWidth: 2 }}
-            tickLine={{ stroke: 'white', strokeWidth: 1.5 }}
+            axisLine={{ stroke: 'white', strokeWidth: 1.5 }}
+            tickLine={{ stroke: 'white', strokeWidth: 1 }}
             angle={-35}
             textAnchor="end"
             height={110}
@@ -58,8 +58,8 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
           />
           <YAxis
             tick={{ fill: 'hsl(var(--foreground))', fontSize: 14, fontWeight: 500 }}
-            axisLine={{ stroke: 'white', strokeWidth: 2 }}
-            tickLine={{ stroke: 'white', strokeWidth: 1.5 }}
+            axisLine={{ stroke: 'white', strokeWidth: 1.5 }}
+            tickLine={{ stroke: 'white', strokeWidth: 1 }}
             label={{
               value: type === 'frequency' ? 'Games' : 'Score %',
               angle: -90,
