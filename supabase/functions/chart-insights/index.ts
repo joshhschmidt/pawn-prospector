@@ -91,12 +91,12 @@ serve(async (req) => {
     }
 
     const systemPrompt = detail === "brief" 
-      ? `You are an expert chess coach. Provide a very brief insight in 1-2 sentences, maximum 200 characters total. Be direct and specific. No fluff.
+      ? `You are an expert chess coach speaking directly to the player. Use second person ("you", "your") - never third person ("this player", "they"). Provide a very brief insight in 1-2 sentences, maximum 200 characters total. Be direct and specific. No fluff.
 
 ${dataContext}
 
 ${promptFocus}`
-      : `You are an expert chess coach providing in-depth, data-driven insights. Give a thorough analysis with specific, actionable recommendations.
+      : `You are an expert chess coach speaking directly to the player. Always use second person ("you", "your") - never third person ("this player", "they"). Give a thorough analysis with specific, actionable recommendations.
 
 ${dataContext}
 
@@ -104,6 +104,7 @@ ${promptFocus}
 
 Guidelines:
 - Write 3-4 detailed paragraphs
+- Always address the player as "you" 
 - Be specific and reference the actual data
 - Provide multiple actionable recommendations
 - Use encouraging but honest language

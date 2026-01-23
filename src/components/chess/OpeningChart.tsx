@@ -48,23 +48,24 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
         >
           <XAxis
             dataKey="shortName"
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
             angle={-45}
             textAnchor="end"
-            height={60}
+            height={70}
           />
           <YAxis
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
             label={{
               value: type === 'frequency' ? 'Games' : 'Score %',
               angle: -90,
               position: 'insideLeft',
-              fill: 'hsl(var(--muted-foreground))',
-              fontSize: 12,
+              fill: 'hsl(var(--foreground))',
+              fontSize: 13,
+              fontWeight: 500,
             }}
           />
           <Tooltip content={<CustomTooltip />} />
