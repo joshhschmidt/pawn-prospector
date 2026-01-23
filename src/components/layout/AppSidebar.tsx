@@ -9,7 +9,8 @@ import {
   ArrowLeft,
   MessageCircle,
   TrendingUp,
-  Search
+  Search,
+  RefreshCw
 } from 'lucide-react';
 import {
   Sidebar,
@@ -31,11 +32,10 @@ interface AppSidebarProps {
   onBack?: () => void;
   currentView?: string;
   onViewChange?: (view: string) => void;
+  onRefresh?: () => void;
 }
 
 const navItems = [
-  { id: 'dashboard', title: 'Dashboard', icon: LayoutDashboard },
-  { id: 'import', title: 'Import & Data', icon: Upload },
   { id: 'overview', title: 'Overview', icon: BarChart3 },
   { id: 'habits', title: 'Habits', icon: Brain },
   { id: 'recent-progress', title: 'Recent Progress', icon: TrendingUp },
@@ -45,7 +45,7 @@ const navItems = [
   { id: 'export', title: 'Export', icon: FileDown },
 ];
 
-export const AppSidebar = ({ username, onBack, currentView = 'overview', onViewChange }: AppSidebarProps) => {
+export const AppSidebar = ({ username, onBack, currentView = 'overview', onViewChange, onRefresh }: AppSidebarProps) => {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
@@ -70,7 +70,18 @@ export const AppSidebar = ({ username, onBack, currentView = 'overview', onViewC
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
-      <SidebarHeader className="border-b border-border p-4">
+      <SidebarHeader className="border-b border-border p-4 space-y-2">
+        {onRefresh && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onRefresh}
+            className="w-full justify-start gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            {!collapsed && <span>Re-import Games</span>}
+          </Button>
+        )}
         {onBack && (
           <Button
             variant="ghost"
@@ -79,7 +90,7 @@ export const AppSidebar = ({ username, onBack, currentView = 'overview', onViewC
             className="w-full justify-start gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            {!collapsed && <span>Back to Import</span>}
+            {!collapsed && <span>Start Over</span>}
           </Button>
         )}
       </SidebarHeader>
