@@ -137,7 +137,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
       return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={setCurrentView} />;
     }
     if (currentView === 'habits') {
-      return <HabitsPage games={games} filters={filters} onFiltersChange={setFilters} />;
+      return <HabitsPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={setCurrentView} />;
     }
     if (currentView === 'tactics') {
       return <TacticsPage games={games} filters={filters} onFiltersChange={setFilters} />;
