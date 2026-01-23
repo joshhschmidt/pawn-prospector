@@ -176,10 +176,14 @@ export const ChartInsights = ({
     }
   }, [chartType, openingStats.length, totalGames]);
 
-  // Get preview text (first ~100 characters)
-  const previewText = insight.length > 120 
-    ? insight.slice(0, 120).trim() + '...' 
-    : insight;
+  // Get first sentence as preview
+  const getFirstSentence = (text: string) => {
+    const match = text.match(/^[^.!?]*[.!?]/);
+    return match ? match[0] : text.slice(0, 120) + '...';
+  };
+  
+  const previewText = getFirstSentence(insight);
+  const hasMoreContent = insight.length > previewText.length;
 
   if (error) {
     return (
@@ -256,7 +260,7 @@ export const ChartInsights = ({
             </CollapsibleContent>
 
             {/* More/Less button */}
-            {insight && insight.length > 120 && (
+            {insight && hasMoreContent && (
               <CollapsibleTrigger asChild>
                 <Button
                   variant="ghost"
