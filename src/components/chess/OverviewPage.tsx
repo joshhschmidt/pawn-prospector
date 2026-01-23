@@ -136,7 +136,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
                 chartType="frequency"
                 openingStats={getStatsForColor(frequencyColor)}
                 totalGames={stats.totalGames}
-                onChatNavigate={() => onNavigate?.('coaching')}
+                onChatNavigate={(context) => onNavigate?.('coaching', context)}
               />
               <div className="h-[400px]">
                 <OpeningChart data={getStatsForColor(frequencyColor).slice(0, 10)} type="frequency" />
@@ -151,7 +151,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
                 chartType="success"
                 openingStats={getStatsForColor(successColor)}
                 totalGames={stats.totalGames}
-                onChatNavigate={() => onNavigate?.('coaching')}
+                onChatNavigate={(context) => onNavigate?.('coaching', context)}
               />
               <div className="h-[400px]">
                 <OpeningChart data={getStatsForColor(successColor).slice(0, 10)} type="performance" />
