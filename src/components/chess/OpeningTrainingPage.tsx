@@ -364,7 +364,7 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
               Recommended Openings
             </h3>
             
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="space-y-4">
               {recommendations.map((rec, index) => (
                 <button
                   key={index}
