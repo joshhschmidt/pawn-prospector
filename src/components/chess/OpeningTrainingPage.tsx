@@ -290,21 +290,19 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
               <>
                   <div className="aspect-square max-w-md mx-auto">
                     <Chessboard
-                      options={{
-                        id: "opening-trainer",
-                        position: game.fen(),
-                        onPieceDrop: ({ sourceSquare, targetSquare }) => {
-                          if (!targetSquare) return false;
-                          return onDrop(sourceSquare, targetSquare);
-                        },
-                        boardOrientation: boardOrientation,
-                        boardStyle: {
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)'
-                        },
-                        darkSquareStyle: { backgroundColor: 'hsl(217, 91%, 35%)' },
-                        lightSquareStyle: { backgroundColor: 'hsl(0, 0%, 85%)' }
+                      id="opening-trainer"
+                      position={game.fen()}
+                      onPieceDrop={(sourceSquare, targetSquare) => {
+                        if (!targetSquare) return false;
+                        return onDrop(sourceSquare, targetSquare);
                       }}
+                      boardOrientation={boardOrientation}
+                      customBoardStyle={{
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)'
+                      }}
+                      customDarkSquareStyle={{ backgroundColor: 'hsl(217, 91%, 35%)' }}
+                      customLightSquareStyle={{ backgroundColor: 'hsl(0, 0%, 85%)' }}
                     />
                   </div>
 
