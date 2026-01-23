@@ -7,7 +7,7 @@ import { StickyFilterBar } from './StickyFilterBar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RotateCcw, ChevronRight, CheckCircle, XCircle, Lightbulb, BookOpen } from 'lucide-react';
+import { Loader2, RotateCcw, ChevronRight, CheckCircle, XCircle, Lightbulb, BookOpen, ArrowLeft } from 'lucide-react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
@@ -32,6 +32,7 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
   const [error, setError] = useState<string | null>(null);
   const [selectedOpening, setSelectedOpening] = useState<OpeningRecommendation | null>(null);
   const [colorFilter, setColorFilter] = useState<'white' | 'black'>('white');
+  const [isPracticing, setIsPracticing] = useState(false);
   
   // Chess game state
   const [game, setGame] = useState(new Chess());
@@ -88,10 +89,10 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
 
   // Reset board when opening changes
   useEffect(() => {
-    if (selectedOpening) {
+    if (selectedOpening && isPracticing) {
       resetPractice();
     }
-  }, [selectedOpening]);
+  }, [selectedOpening, isPracticing]);
 
   const resetPractice = useCallback(() => {
     setGame(new Chess());
@@ -101,6 +102,16 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
     setShowHint(false);
     setPracticeComplete(false);
   }, []);
+
+  const handleSelectOpening = (opening: OpeningRecommendation) => {
+    setSelectedOpening(opening);
+    setIsPracticing(true);
+  };
+
+  const handleBackToList = () => {
+    setIsPracticing(false);
+    setSelectedOpening(null);
+  };
 
   // Determine if it's player's turn based on the opening color
   const isPlayerTurn = useCallback(() => {
@@ -209,86 +220,27 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
         </div>
       ) : error ? (
         <div className="text-center py-12 text-destructive">{error}</div>
-      ) : (
-        <div className="grid lg:grid-cols-2 gap-6 mt-4">
-          {/* Left Column - Opening Recommendations */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Recommended Openings
-            </h3>
-            
-            {recommendations.map((rec, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedOpening(rec)}
-                className={`w-full text-left rounded-xl border p-4 transition-all ${
-                  selectedOpening?.name === rec.name
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-card hover:border-primary/50'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-semibold text-foreground">{rec.name}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{rec.reason}</p>
-                  </div>
-                  <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform ${
-                    selectedOpening?.name === rec.name ? 'rotate-90 text-primary' : ''
-                  }`} />
+      ) : isPracticing && selectedOpening ? (
+          /* Practice View - Large Chessboard */
+          <div className="mt-4 space-y-4">
+            <Button variant="ghost" onClick={handleBackToList} className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Openings
+            </Button>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Chessboard - Takes 2/3 of the screen */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-foreground text-lg">{selectedOpening.name}</h3>
+                  <Button variant="outline" size="sm" onClick={resetPractice} className="gap-1">
+                    <RotateCcw className="h-4 w-4" />
+                    Reset
+                  </Button>
                 </div>
-                
-                {selectedOpening?.name === rec.name && (
-                  <div className="mt-4 pt-4 border-t border-border space-y-3">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Main Line</p>
-                      <p className="text-sm font-mono text-foreground">
-                        {rec.mainLine.map((move, i) => (
-                          <span key={i}>
-                            {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}. </span>}
-                            {move}{' '}
-                          </span>
-                        ))}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Key Ideas</p>
-                      <ul className="text-sm text-foreground space-y-1">
-                        {rec.keyIdeas.map((idea, i) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <span className="text-primary">•</span>
-                            {idea}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-              </button>
-            ))}
 
-            {recommendations.length === 0 && !isLoading && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Lightbulb className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>Import more games to get personalized opening recommendations.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column - Chessboard Practice */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">Practice Board</h3>
-              <Button variant="outline" size="sm" onClick={resetPractice} className="gap-1">
-                <RotateCcw className="h-4 w-4" />
-                Reset
-              </Button>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-4">
-              {selectedOpening ? (
-              <>
-                  <div className="aspect-square max-w-md mx-auto">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="aspect-square max-w-2xl mx-auto">
                     <Chessboard
                       id="opening-trainer"
                       position={game.fen()}
@@ -368,16 +320,87 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
                       />
                     </div>
                   </div>
-                </>
-              ) : (
-                <div className="aspect-square max-w-md mx-auto flex items-center justify-center bg-muted/20 rounded-lg">
-                  <p className="text-muted-foreground text-center">
-                    Select an opening to start practicing
-                  </p>
                 </div>
-              )}
+              </div>
+
+              {/* Opening Details Sidebar */}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-sm text-muted-foreground mb-4">{selectedOpening.reason}</p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Main Line</p>
+                      <p className="text-sm font-mono text-foreground">
+                        {selectedOpening.mainLine.map((move, i) => (
+                          <span key={i} className={i < currentMoveIndex ? 'text-primary' : ''}>
+                            {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}. </span>}
+                            {move}{' '}
+                          </span>
+                        ))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Key Ideas</p>
+                      <ul className="text-sm text-foreground space-y-1">
+                        {selectedOpening.keyIdeas.map((idea, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-primary">•</span>
+                            {idea}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+        ) : (
+          /* List View - Full Width Recommendations */
+          <div className="mt-4 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Recommended Openings
+            </h3>
+            
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {recommendations.map((rec, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectOpening(rec)}
+                  className="w-full text-left rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-foreground">{rec.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{rec.reason}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Main Line</p>
+                    <p className="text-xs font-mono text-foreground truncate">
+                      {rec.mainLine.slice(0, 6).map((move, i) => (
+                        <span key={i}>
+                          {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}.</span>}
+                          {move}{' '}
+                        </span>
+                      ))}
+                      {rec.mainLine.length > 6 && '...'}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {recommendations.length === 0 && !isLoading && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Lightbulb className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                <p>Import more games to get personalized opening recommendations.</p>
+              </div>
+            )}
         </div>
       )}
     </PageContainer>
