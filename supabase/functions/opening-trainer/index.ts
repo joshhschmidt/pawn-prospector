@@ -11,57 +11,58 @@ serve(async (req) => {
   }
 
   try {
-    const { openingStats, playerColor } = await req.json();
+    const { topOpenings, playerColor } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are an expert chess coach helping a player improve their opening repertoire.
-Based on their game statistics, recommend specific opening lines they should practice.
-
-For each recommendation, provide:
-1. The opening name
-2. A brief reason why they should practice it
-3. The main line moves in standard algebraic notation (SAN)
-4. 2-3 key ideas or plans in the opening
+    const systemPrompt = `You are an expert chess coach helping a player practice their best openings.
+For each opening provided, generate exactly 3 different practice lines (variations) that the player should know.
 
 Respond ONLY with valid JSON in this exact format:
 {
-  "recommendations": [
+  "openings": [
     {
-      "name": "Italian Game - Giuoco Piano",
-      "reason": "Your most played opening with room for improvement",
-      "mainLine": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "c3", "Nf6", "d4", "exd4", "cxd4"],
-      "keyIdeas": [
-        "Control the center with d4",
-        "Develop pieces toward the kingside",
-        "Castle early for king safety"
-      ],
-      "color": "white",
-      "difficulty": "beginner"
+      "bucket": "italian_game",
+      "name": "Italian Game",
+      "lines": [
+        {
+          "name": "Giuoco Piano - Main Line",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "c3", "Nf6", "d4"],
+          "keyIdea": "Control the center with d4 and develop pieces harmoniously"
+        },
+        {
+          "name": "Evans Gambit",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "b4", "Bxb4", "c3"],
+          "keyIdea": "Sacrifice a pawn for rapid development and attack"
+        },
+        {
+          "name": "Giuoco Pianissimo",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "d3", "Nf6", "O-O"],
+          "keyIdea": "Slow, positional setup with a solid pawn structure"
+        }
+      ]
     }
   ]
 }
 
-Provide exactly 3 opening recommendations based on the player's statistics.`;
+Each line should:
+- Have a descriptive name
+- Include 8-12 moves in standard algebraic notation
+- Have one key strategic idea`;
 
-    const colorContext = playerColor === 'white' ? 'as White' : playerColor === 'black' ? 'as Black' : 'for both colors';
+    const colorContext = playerColor === 'white' ? 'as White' : 'as Black';
     
-    const userPrompt = `Analyze this player's opening statistics and recommend 3 openings to practice ${colorContext}:
+    const userPrompt = `Generate 3 practice lines for each of these top openings the player uses ${colorContext}:
 
-Opening Statistics (sorted by games played):
-${openingStats.slice(0, 10).map((o: any) => 
-  `- ${o.label || o.bucket}: ${o.games} games, ${o.scorePercent.toFixed(0)}% score (${o.wins}W/${o.losses}L/${o.draws}D)`
+${topOpenings.map((o: any, i: number) => 
+  `${i + 1}. ${o.label} (bucket: ${o.bucket}) - ${o.games} games, ${o.winRate.toFixed(0)}% win rate`
 ).join('\n')}
 
-Focus on:
-1. Openings where they're underperforming (low win rate with decent sample size)
-2. Their most played openings that could use refinement
-3. A new opening that complements their style
-
-For each opening, provide the full main line moves and practical ideas.`;
+For each opening, provide 3 different variations or lines that are commonly played and important to know.
+Make sure the lines are appropriate for the color (${playerColor}).`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -107,9 +108,9 @@ For each opening, provide the full main line moves and practical ideas.`;
       throw new Error("Could not parse JSON from AI response");
     }
 
-    const recommendations = JSON.parse(jsonMatch[0]);
+    const result = JSON.parse(jsonMatch[0]);
 
-    return new Response(JSON.stringify(recommendations), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
