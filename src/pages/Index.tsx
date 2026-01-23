@@ -13,8 +13,7 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { OverviewPage } from '@/components/chess/OverviewPage';
 import { HabitsPage } from '@/components/chess/HabitsPage';
-import { TacticsPage } from '@/components/chess/TacticsPage';
-import { TrainingPage } from '@/components/chess/TrainingPage';
+import { OpeningTrainingPage } from '@/components/chess/OpeningTrainingPage';
 import { ExportPage } from '@/components/chess/ExportPage';
 import { CoachingConversationsPage } from '@/components/chess/CoachingConversationsPage';
 import { EmptyState, LoadingState } from '@/components/chess/EmptyLoadingStates';
@@ -146,11 +145,8 @@ const Index = ({ demoMode = false }: IndexProps) => {
         if (context) setCoachingContext(context);
       }} />;
     }
-    if (currentView === 'tactics') {
-      return <TacticsPage games={games} filters={filters} onFiltersChange={setFilters} />;
-    }
     if (currentView === 'training') {
-      return <TrainingPage games={games} username={username} filters={filters} onFiltersChange={setFilters} />;
+      return <OpeningTrainingPage games={games} filters={filters} onFiltersChange={setFilters} />;
     }
     if (currentView === 'coaching') {
       return <CoachingConversationsPage 
