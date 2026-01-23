@@ -78,57 +78,61 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
   // Extract practice lines from AI response
   const extractPracticeLines = (content: string): ExtractedLine[] => {
     const lines: ExtractedLine[] = [];
+    const seenNames = new Set<string>();
     
-    // Pattern 1: Look for numbered moves like "1. e4 e5 2. Nf3 Nc6..."
-    const moveSequencePattern = /(?:^|\n)(?:\*\*)?([^:*\n]+)(?:\*\*)?[:\s]*\n?\s*((?:\d+\.\s*[A-Za-z][a-zA-Z0-9+#=]*\s+[A-Za-z][a-zA-Z0-9+#=]*\s*)+)/gm;
+    // Helper to parse moves from a string like "1. e4 e5 2. Nf3 Nc6"
+    const parseMoves = (moveString: string): string[] => {
+      const moves: string[] = [];
+      // Match each move number followed by white's move and optionally black's move
+      const movePattern = /(\d+)\.\s*([A-Za-z][a-zA-Z0-9+#=xO\-]*)\s*([A-Za-z][a-zA-Z0-9+#=xO\-]*)?/g;
+      let match;
+      while ((match = movePattern.exec(moveString)) !== null) {
+        if (match[2]) moves.push(match[2]);
+        if (match[3]) moves.push(match[3]);
+      }
+      return moves;
+    };
     
+    // Pattern 1: **Opening Name**: 1. e4 e5 2. Nf3... (bold name with colon)
+    const boldColonPattern = /\*\*([^*]+)\*\*\s*:\s*((?:\d+\.\s*[A-Za-z][a-zA-Z0-9+#=xO\-]*\s*[A-Za-z]?[a-zA-Z0-9+#=xO\-]*\s*)+)/g;
     let match;
-    while ((match = moveSequencePattern.exec(content)) !== null) {
-      const name = match[1].trim().replace(/\*\*/g, '');
-      const moveString = match[2];
-      
-      // Parse moves from "1. e4 e5 2. Nf3 Nc6" format
-      const moves: string[] = [];
-      const movePattern = /\d+\.\s*([A-Za-z][a-zA-Z0-9+#=x]*)\s+([A-Za-z][a-zA-Z0-9+#=x]*)/g;
-      let moveMatch;
-      while ((moveMatch = movePattern.exec(moveString)) !== null) {
-        moves.push(moveMatch[1], moveMatch[2]);
-      }
-      
-      if (moves.length >= 4) {
-        lines.push({
-          name,
-          moves,
-          keyIdea: `Practice the ${name} opening line`
-        });
+    while ((match = boldColonPattern.exec(content)) !== null) {
+      const name = match[1].trim();
+      const moves = parseMoves(match[2]);
+      if (moves.length >= 4 && !seenNames.has(name.toLowerCase())) {
+        seenNames.add(name.toLowerCase());
+        lines.push({ name, moves, keyIdea: `Practice the ${name} opening line` });
       }
     }
     
-    // Pattern 2: Look for moves in parentheses or after a colon
-    const inlinePattern = /(?:\*\*)?([^*\n:]+)(?:\*\*)?:\s*\(?(\s*\d+\.\s*[A-Za-z][a-zA-Z0-9+#=x\s.]+)\)?/g;
-    
-    while ((match = inlinePattern.exec(content)) !== null) {
-      const name = match[1].trim().replace(/\*\*/g, '');
-      const moveString = match[2];
-      
-      const moves: string[] = [];
-      const movePattern = /\d+\.\s*([A-Za-z][a-zA-Z0-9+#=x]*)\s*([A-Za-z][a-zA-Z0-9+#=x]*)?/g;
-      let moveMatch;
-      while ((moveMatch = movePattern.exec(moveString)) !== null) {
-        moves.push(moveMatch[1]);
-        if (moveMatch[2]) moves.push(moveMatch[2]);
-      }
-      
-      if (moves.length >= 4 && !lines.some(l => l.name === name)) {
-        lines.push({
-          name,
-          moves,
-          keyIdea: `Practice the ${name} opening line`
-        });
+    // Pattern 2: Opening Name: 1. e4 e5... (non-bold with colon)
+    const colonPattern = /(?:^|\n)\s*([A-Z][a-zA-Z\s'-]+?):\s*((?:\d+\.\s*[A-Za-z][a-zA-Z0-9+#=xO\-]*\s*[A-Za-z]?[a-zA-Z0-9+#=xO\-]*\s*)+)/g;
+    while ((match = colonPattern.exec(content)) !== null) {
+      const name = match[1].trim();
+      const moves = parseMoves(match[2]);
+      if (moves.length >= 4 && !seenNames.has(name.toLowerCase())) {
+        seenNames.add(name.toLowerCase());
+        lines.push({ name, moves, keyIdea: `Practice the ${name} opening line` });
       }
     }
     
-    return lines.slice(0, 3); // Limit to 3 practice lines
+    // Pattern 3: Look for standalone move sequences (at least 3 move pairs)
+    const standalonePattern = /(?:^|\n)\s*((?:1\.\s*[A-Za-z][a-zA-Z0-9+#=xO\-]*\s*[A-Za-z][a-zA-Z0-9+#=xO\-]*\s*)(?:\d+\.\s*[A-Za-z][a-zA-Z0-9+#=xO\-]*\s*[A-Za-z]?[a-zA-Z0-9+#=xO\-]*\s*){2,})/g;
+    while ((match = standalonePattern.exec(content)) !== null) {
+      const moves = parseMoves(match[1]);
+      if (moves.length >= 6 && lines.length < 3) {
+        // Try to find a name from context (look for text before on same paragraph)
+        const contextBefore = content.slice(Math.max(0, match.index - 100), match.index);
+        const nameMatch = contextBefore.match(/(?:\*\*)?([A-Z][a-zA-Z\s'-]+?)(?:\*\*)?\s*(?::|-)?\s*$/);
+        const name = nameMatch ? nameMatch[1].trim() : `Opening Line ${lines.length + 1}`;
+        if (!seenNames.has(name.toLowerCase())) {
+          seenNames.add(name.toLowerCase());
+          lines.push({ name, moves, keyIdea: `Practice this opening line` });
+        }
+      }
+    }
+    
+    return lines.slice(0, 3);
   };
 
   const sendMessage = async (messageText: string) => {
