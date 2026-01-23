@@ -7,6 +7,8 @@ import { CoachChat } from './CoachChat';
 import { PracticeBoard, PracticeLine } from './PracticeBoard';
 import { filterGames, calculateStats, calculateOpeningStats } from '@/lib/analysis';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface CoachingConversationsPageProps {
   games: Game[];
@@ -56,18 +58,65 @@ export const CoachingConversationsPage = ({
     setPracticeColor(color);
   };
 
+  const handleClosePractice = () => {
+    setPracticeLine(null);
+  };
+
   return (
     <PageContainer>
       <PageHeader 
         title="Coaching Conversations"
-        subtitle="Chat with your AI chess coach and practice opening lines"
+        subtitle="Chat with your AI chess coach for personalized advice"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Chat */}
+      {practiceLine ? (
+        /* Practice Mode - Show board when a line is selected */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Chat */}
+          <SectionCard 
+            title="AI Coach" 
+            description="Continue discussing with your coach"
+          >
+            <CoachChat 
+              playerStats={playerStats}
+              username={username}
+              initialContext={initialContext}
+              onContextConsumed={onContextConsumed}
+              onPracticeLineSelected={handlePracticeLineSelected}
+            />
+          </SectionCard>
+
+          {/* Right Column - Practice Board */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-foreground">Practice: {practiceLine.name}</h3>
+              <Button variant="ghost" size="sm" onClick={handleClosePractice}>
+                <X className="h-4 w-4 mr-1" />
+                Close
+              </Button>
+            </div>
+            
+            {/* Color Selection */}
+            <Tabs value={practiceColor} onValueChange={(v) => setPracticeColor(v as 'white' | 'black')} className="w-full">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="white">As White</TabsTrigger>
+                <TabsTrigger value="black">As Black</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <PracticeBoard 
+              line={practiceLine}
+              color={practiceColor}
+              onBack={handleClosePractice}
+              showBackButton={false}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Chat Only Mode */
         <SectionCard 
           title="AI Coach" 
-          description="Ask questions about your games, get training tips, and discuss opening lines"
+          description="Ask questions about your games, get training tips, and request opening lines to practice"
         >
           <CoachChat 
             playerStats={playerStats}
@@ -77,32 +126,7 @@ export const CoachingConversationsPage = ({
             onPracticeLineSelected={handlePracticeLineSelected}
           />
         </SectionCard>
-
-        {/* Right Column - Practice Board */}
-        <div className="space-y-4">
-          <SectionCard 
-            title="Practice Board" 
-            description="Practice opening lines suggested by your coach"
-          >
-            {/* Color Selection */}
-            <div className="mb-4">
-              <Tabs value={practiceColor} onValueChange={(v) => setPracticeColor(v as 'white' | 'black')} className="w-full">
-                <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger value="white">As White</TabsTrigger>
-                  <TabsTrigger value="black">As Black</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            
-            <PracticeBoard 
-              line={practiceLine}
-              color={practiceColor}
-              onBack={() => setPracticeLine(null)}
-              showBackButton={!!practiceLine}
-            />
-          </SectionCard>
-        </div>
-      </div>
+      )}
     </PageContainer>
   );
 };
