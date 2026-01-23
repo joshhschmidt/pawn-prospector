@@ -112,10 +112,10 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
       {/* Tabbed Charts Section */}
       <div className="mt-6">
         <Tabs defaultValue="insights" className="w-full">
-          <TabsList className="mb-4 flex-wrap h-auto gap-1">
+          <TabsList className="mb-4 w-full grid grid-cols-6">
             <TabsTrigger value="insights">Top Insights</TabsTrigger>
             <TabsTrigger value="focus">Opening Focus</TabsTrigger>
-            <TabsTrigger value="frequency">Opening Frequency</TabsTrigger>
+            <TabsTrigger value="frequency">Frequency</TabsTrigger>
             <TabsTrigger value="success">Success Rate</TabsTrigger>
             <TabsTrigger value="color">By Color</TabsTrigger>
             <TabsTrigger value="table">All Openings</TabsTrigger>
