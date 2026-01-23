@@ -47,13 +47,14 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
           margin={{ top: 20, right: 20, left: 20, bottom: 60 }}
         >
           <XAxis
-            dataKey="shortName"
-            tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
+            dataKey="name"
+            tick={{ fill: 'hsl(var(--foreground))', fontSize: 11, fontWeight: 500 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
-            angle={-45}
+            angle={-35}
             textAnchor="end"
-            height={70}
+            height={90}
+            interval={0}
           />
           <YAxis
             tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
