@@ -22,9 +22,9 @@ interface OverviewPageProps {
 type ColorFilter = 'all' | 'white' | 'black';
 
 export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: OverviewPageProps) => {
-  const [frequencyColor, setFrequencyColor] = useState<ColorFilter>('all');
-  const [successColor, setSuccessColor] = useState<ColorFilter>('all');
-  const [tableColor, setTableColor] = useState<ColorFilter>('all');
+  const [frequencyColor, setFrequencyColor] = useState<ColorFilter>('white');
+  const [successColor, setSuccessColor] = useState<ColorFilter>('white');
+  const [tableColor, setTableColor] = useState<ColorFilter>('white');
 
   const filteredGames = filterGames(games, filters);
   const stats = calculateStats(filteredGames);
@@ -63,20 +63,10 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
     value: ColorFilter; 
     onChange: (v: ColorFilter) => void;
   }) => (
-    <div className="flex gap-1 mb-4">
-      <button
-        onClick={() => onChange('all')}
-        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-          value === 'all' 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted text-muted-foreground hover:text-foreground'
-        }`}
-      >
-        All Games
-      </button>
+    <div className="grid grid-cols-2 gap-1 mb-4">
       <button
         onClick={() => onChange('white')}
-        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
           value === 'white' 
             ? 'bg-white text-black border border-border' 
             : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -86,7 +76,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
       </button>
       <button
         onClick={() => onChange('black')}
-        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
           value === 'black' 
             ? 'bg-zinc-800 text-white' 
             : 'bg-muted text-muted-foreground hover:text-foreground'
