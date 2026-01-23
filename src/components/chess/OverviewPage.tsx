@@ -11,6 +11,7 @@ import { OpeningChart } from './OpeningChart';
 import { OpeningTable } from './OpeningTable';
 import { TopInsights } from './TopInsights';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 interface OverviewPageProps {
@@ -108,77 +109,68 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
         />
       </KPIGrid>
 
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3 mt-6">
-        {/* Charts - 2 columns */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Opening Charts Row */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <SectionCard title="Opening Frequency" description="Your most played openings">
-              <div className="h-[280px]">
-                <OpeningChart data={openingStats.slice(0, 8)} type="frequency" />
-              </div>
-            </SectionCard>
+      {/* Tabbed Charts Section */}
+      <div className="mt-6">
+        <Tabs defaultValue="frequency" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="frequency">Opening Frequency</TabsTrigger>
+            <TabsTrigger value="success">Success Rate</TabsTrigger>
+            <TabsTrigger value="color">By Color</TabsTrigger>
+            <TabsTrigger value="table">All Openings</TabsTrigger>
+          </TabsList>
 
-            <SectionCard title="Opening Success Rate" description="Score % by opening">
-              <div className="h-[280px]">
-                <OpeningChart data={openingStats.slice(0, 8)} type="performance" />
-              </div>
-            </SectionCard>
-          </div>
-          
-          {/* Performance by Color */}
-          <SectionCard title="Performance by Color" description="Which openings work best for you as White vs Black">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS WHITE</h4>
-                <div className="h-[220px]">
-                  <OpeningChart data={whiteOpeningStats.slice(0, 6)} type="performance" />
-                </div>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS BLACK</h4>
-                <div className="h-[220px]">
-                  <OpeningChart data={blackOpeningStats.slice(0, 6)} type="performance" />
-                </div>
-              </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Charts - 2 columns */}
+            <div className="lg:col-span-2">
+              <TabsContent value="frequency" className="mt-0">
+                <SectionCard title="Opening Frequency" description="Your most played openings">
+                  <div className="h-[320px]">
+                    <OpeningChart data={openingStats.slice(0, 10)} type="frequency" />
+                  </div>
+                </SectionCard>
+              </TabsContent>
+
+              <TabsContent value="success" className="mt-0">
+                <SectionCard title="Opening Success Rate" description="Score % by opening">
+                  <div className="h-[320px]">
+                    <OpeningChart data={openingStats.slice(0, 10)} type="performance" />
+                  </div>
+                </SectionCard>
+              </TabsContent>
+
+              <TabsContent value="color" className="mt-0">
+                <SectionCard title="Performance by Color" description="Which openings work best for you as White vs Black">
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS WHITE</h4>
+                      <div className="h-[280px]">
+                        <OpeningChart data={whiteOpeningStats.slice(0, 6)} type="performance" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS BLACK</h4>
+                      <div className="h-[280px]">
+                        <OpeningChart data={blackOpeningStats.slice(0, 6)} type="performance" />
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+              </TabsContent>
+
+              <TabsContent value="table" className="mt-0">
+                <SectionCard title="All Openings" description="Full breakdown of your opening buckets">
+                  <OpeningTable data={openingStats} />
+                </SectionCard>
+              </TabsContent>
             </div>
-          </SectionCard>
 
-          {/* All Openings Table */}
-          <Collapsible open={showTable} onOpenChange={setShowTable}>
-            <SectionCard
-              title="All Openings"
-              description="Full breakdown of your opening buckets"
-              actions={
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    {showTable ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    {showTable ? 'Hide' : 'Show'} table
-                  </Button>
-                </CollapsibleTrigger>
-              }
-            >
-              <CollapsibleContent className="pt-2">
-                <OpeningTable data={openingStats} />
-              </CollapsibleContent>
-
-              {!showTable && (
-                <p className="text-sm text-muted-foreground">
-                  Tip: keep this collapsed most of the time—use it when you want to drill into a specific opening bucket.
-                </p>
-              )}
-            </SectionCard>
-          </Collapsible>
-        </div>
-
-        {/* Insights Panel - 1 column */}
-        <div className="space-y-6">
-          <TopInsights 
-            stats={stats} 
-            openingStats={openingStats}
-            onNavigate={onNavigate}
-          />
+            {/* Insights Panel - 1 column */}
+            <div className="space-y-6">
+              <TopInsights 
+                stats={stats} 
+                openingStats={openingStats}
+                onNavigate={onNavigate}
+              />
 
           {/* Opening Insights */}
           <SectionCard
@@ -245,7 +237,9 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
               </div>
             </div>
           </SectionCard>
-        </div>
+            </div>
+          </div>
+        </Tabs>
       </div>
     </PageContainer>
   );
