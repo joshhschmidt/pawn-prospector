@@ -5,6 +5,52 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function to call AI gateway with retry logic for transient errors
+async function callAIWithRetry(
+  apiKey: string,
+  body: object,
+  maxRetries = 3
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      
+      // If successful or a client error (4xx), return immediately
+      if (response.ok || (response.status >= 400 && response.status < 500)) {
+        return response;
+      }
+      
+      // For 5xx errors, retry after a delay
+      const errorText = await response.text();
+      console.error(`AI gateway error (attempt ${attempt + 1}):`, response.status, errorText);
+      lastError = new Error(`AI gateway returned ${response.status}`);
+      
+      // Exponential backoff: 1s, 2s, 4s
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    } catch (err) {
+      console.error(`Network error (attempt ${attempt + 1}):`, err);
+      lastError = err instanceof Error ? err : new Error("Network error");
+      
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    }
+  }
+  
+  throw lastError || new Error("AI gateway unavailable after retries");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -35,21 +81,26 @@ Provide a comprehensive explanation (200-300 words) that includes:
 
 Write in second person (you/your) to make it personal and actionable.`;
 
-      const detailResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "user", content: detailPrompt }
-          ],
-        }),
+      const detailResponse = await callAIWithRetry(LOVABLE_API_KEY, {
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "user", content: detailPrompt }
+        ],
       });
 
       if (!detailResponse.ok) {
+        if (detailResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (detailResponse.status === 402) {
+          return new Response(
+            JSON.stringify({ error: "API credits exhausted." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         throw new Error("AI gateway error for detail request");
       }
 
@@ -109,19 +160,12 @@ LOSING PATTERNS:
 
 Provide exactly 3 winning habits and 3 losing habits based on this data.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-      }),
+    const response = await callAIWithRetry(LOVABLE_API_KEY, {
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
     });
 
     if (!response.ok) {
@@ -139,7 +183,7 @@ Provide exactly 3 winning habits and 3 losing habits based on this data.`;
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI gateway error");
+      throw new Error("AI service temporarily unavailable. Please try again.");
     }
 
     const data = await response.json();
