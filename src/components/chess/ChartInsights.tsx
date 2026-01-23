@@ -18,7 +18,7 @@ interface ChartInsightsProps {
   whiteStats?: OpeningData[];
   blackStats?: OpeningData[];
   totalGames: number;
-  onChatNavigate?: () => void;
+  onChatNavigate?: (context: string) => void;
 }
 
 const OPENING_LABELS: Record<string, string> = {
@@ -288,7 +288,11 @@ export const ChartInsights = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={onChatNavigate}
+              onClick={() => {
+                const chartLabel = chartType === 'frequency' ? 'opening frequency' : chartType === 'success' ? 'win rate by opening' : 'color performance';
+                const context = `I want to discuss my ${chartLabel} analysis. Here's what the AI found: ${briefInsight}`;
+                onChatNavigate(context);
+              }}
               className="h-8 px-3 gap-1"
             >
               <MessageCircle className="h-3 w-3" />
