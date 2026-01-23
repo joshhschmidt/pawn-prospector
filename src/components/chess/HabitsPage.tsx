@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, Loader2, Lightbulb, ChevronDown, MessageCircle, Zap, Shield, Target, Crown, Swords, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Loader2, Lightbulb, ChevronDown, MessageCircle, Zap, Shield, Target, Crown, Swords, Clock, Castle, Brain, Eye, Footprints, AlertTriangle, CheckCircle, XCircle, Timer, Move, Crosshair, type LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 
@@ -204,35 +204,79 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
     }
   }, [filteredGames.length, filters, losingColorFilter]);
 
-  // Icons for habit cards
-  const habitIcons = [
-    { icon: Zap, color: 'text-primary' },
-    { icon: Shield, color: 'text-primary' },
-    { icon: Target, color: 'text-primary' },
-    { icon: Crown, color: 'text-primary' },
-    { icon: Swords, color: 'text-primary' },
-    { icon: Clock, color: 'text-primary' },
-  ];
+  // Get contextual icon based on habit content
+  const getHabitIcon = (title: string, description: string): LucideIcon => {
+    const text = `${title} ${description}`.toLowerCase();
+    
+    // Castling related
+    if (text.includes('castl') || text.includes('king safety') || text.includes('king side')) {
+      return Castle;
+    }
+    // Queen related
+    if (text.includes('queen')) {
+      return Crown;
+    }
+    // Knight/fork related
+    if (text.includes('knight') || text.includes('fork') || text.includes('nc7') || text.includes('horse')) {
+      return Swords;
+    }
+    // Tempo/time related
+    if (text.includes('tempo') || text.includes('time') || text.includes('quick') || text.includes('fast') || text.includes('speed')) {
+      return Timer;
+    }
+    // Development/opening related
+    if (text.includes('develop') || text.includes('opening') || text.includes('early')) {
+      return Footprints;
+    }
+    // Tactical/attack related
+    if (text.includes('attack') || text.includes('tactic') || text.includes('aggress') || text.includes('pressure')) {
+      return Crosshair;
+    }
+    // Defense/safety related
+    if (text.includes('defend') || text.includes('safe') || text.includes('protect') || text.includes('solid')) {
+      return Shield;
+    }
+    // Blunder/mistake related
+    if (text.includes('blunder') || text.includes('mistake') || text.includes('error') || text.includes('hang')) {
+      return AlertTriangle;
+    }
+    // Check related
+    if (text.includes('check')) {
+      return Zap;
+    }
+    // Pattern/strategy related
+    if (text.includes('pattern') || text.includes('strateg') || text.includes('plan') || text.includes('think')) {
+      return Brain;
+    }
+    // Vision/awareness related
+    if (text.includes('vision') || text.includes('see') || text.includes('aware') || text.includes('spot')) {
+      return Eye;
+    }
+    // Default based on type context in title
+    if (text.includes('win') || text.includes('success') || text.includes('strong')) {
+      return CheckCircle;
+    }
+    if (text.includes('loss') || text.includes('fail') || text.includes('weak')) {
+      return XCircle;
+    }
+    
+    // Fallback
+    return Target;
+  };
 
   const HabitCard = ({ insight, index, type }: { insight: HabitInsight; index: number; type: 'winning' | 'losing' }) => {
     const cardKey = `${type}-${index}`;
     const isExpanded = expandedCards[cardKey];
     const isLoadingDetail = loadingDetails[cardKey];
-    const IconComponent = habitIcons[index % habitIcons.length].icon;
+    const IconComponent = getHabitIcon(insight.title, insight.description);
     
     return (
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex">
-          {/* Large icon column */}
-          <div 
-            className={`flex items-center justify-center bg-primary/5 border-r border-border transition-all duration-300 ease-out ${
-              isExpanded ? 'w-14 py-4' : 'w-20 py-6'
-            }`}
-          >
+          {/* Icon column - fixed size */}
+          <div className="flex items-center justify-center w-20 bg-primary/5 border-r border-border">
             <IconComponent 
-              className={`text-primary/40 transition-all duration-300 ease-out ${
-                isExpanded ? 'h-6 w-6' : 'h-12 w-12'
-              }`}
+              className="h-10 w-10 text-primary/40"
               strokeWidth={1.5}
             />
           </div>
