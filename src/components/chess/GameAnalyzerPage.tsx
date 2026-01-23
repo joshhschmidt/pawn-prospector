@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Game, FilterState, OpeningBucket, OPENING_LABELS, TIME_CONTROL_LABELS } from '@/types/chess';
 import { filterGames } from '@/lib/analysis';
 import { parsePGN } from '@/lib/pgn-parser';
@@ -116,6 +116,24 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
       setAnalysis(prev => prev ? { ...prev, moments: momentsWithFen } : null);
     }
   }, [analysis?.summary, selectedGame]);
+
+  // Keyboard navigation for moves
+  useEffect(() => {
+    if (!expandedMoment || !selectedGame?.moves) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setCurrentMoveIndex(prev => Math.max(0, prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setCurrentMoveIndex(prev => Math.min((selectedGame.moves?.length || 1) - 1, prev + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [expandedMoment, selectedGame?.moves]);
 
   const analyzeGame = async (game: Game) => {
     // Extract moves from PGN if not available
