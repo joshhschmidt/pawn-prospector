@@ -133,7 +133,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
       );
     }
     if (currentView === 'overview') {
-      return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} />;
+      return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={setCurrentView} />;
     }
     if (currentView === 'habits') {
       return <HabitsPage games={games} filters={filters} onFiltersChange={setFilters} />;
@@ -147,7 +147,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
     if (currentView === 'export') {
       return <ExportPage games={games} username={username} />;
     }
-    return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} />;
+    return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={setCurrentView} />;
   };
 
   // Landing page

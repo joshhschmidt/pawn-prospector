@@ -16,9 +16,10 @@ interface OverviewPageProps {
   games: Game[];
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
+  onNavigate?: (view: string) => void;
 }
 
-export const OverviewPage = ({ games, filters, onFiltersChange }: OverviewPageProps) => {
+export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: OverviewPageProps) => {
   const filteredGames = filterGames(games, filters);
   const stats = calculateStats(filteredGames);
   const openingStats = useMemo(() => calculateOpeningStats(filteredGames), [filteredGames]);
@@ -106,32 +107,42 @@ export const OverviewPage = ({ games, filters, onFiltersChange }: OverviewPagePr
 
           <TabsContent value="frequency" className="mt-0">
             <SectionCard title="Opening Frequency" description="Your most played openings">
-              <div className="h-[400px]">
-                <OpeningChart data={openingStats.slice(0, 10)} type="frequency" />
-              </div>
               <ChartInsights
                 chartType="frequency"
                 openingStats={openingStats}
                 totalGames={stats.totalGames}
+                onChatNavigate={() => onNavigate?.('training')}
               />
+              <div className="h-[400px]">
+                <OpeningChart data={openingStats.slice(0, 10)} type="frequency" />
+              </div>
             </SectionCard>
           </TabsContent>
 
           <TabsContent value="success" className="mt-0">
             <SectionCard title="Opening Success Rate" description="Score % by opening">
-              <div className="h-[400px]">
-                <OpeningChart data={openingStats.slice(0, 10)} type="performance" />
-              </div>
               <ChartInsights
                 chartType="success"
                 openingStats={openingStats}
                 totalGames={stats.totalGames}
+                onChatNavigate={() => onNavigate?.('training')}
               />
+              <div className="h-[400px]">
+                <OpeningChart data={openingStats.slice(0, 10)} type="performance" />
+              </div>
             </SectionCard>
           </TabsContent>
 
           <TabsContent value="color" className="mt-0">
             <SectionCard title="Performance by Color" description="Which openings work best for you as White vs Black">
+              <ChartInsights
+                chartType="color"
+                openingStats={openingStats}
+                whiteStats={whiteOpeningStats}
+                blackStats={blackOpeningStats}
+                totalGames={stats.totalGames}
+                onChatNavigate={() => onNavigate?.('training')}
+              />
               <div className="grid gap-6 lg:grid-cols-2">
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS WHITE</h4>
@@ -146,13 +157,6 @@ export const OverviewPage = ({ games, filters, onFiltersChange }: OverviewPagePr
                   </div>
                 </div>
               </div>
-              <ChartInsights
-                chartType="color"
-                openingStats={openingStats}
-                whiteStats={whiteOpeningStats}
-                blackStats={blackOpeningStats}
-                totalGames={stats.totalGames}
-              />
             </SectionCard>
           </TabsContent>
 

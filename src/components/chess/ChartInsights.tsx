@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Sparkles, RefreshCw, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -18,6 +18,7 @@ interface ChartInsightsProps {
   whiteStats?: OpeningData[];
   blackStats?: OpeningData[];
   totalGames: number;
+  onChatNavigate?: () => void;
 }
 
 const OPENING_LABELS: Record<string, string> = {
@@ -33,7 +34,6 @@ const OPENING_LABELS: Record<string, string> = {
   french_defense: "French Defense",
   caro_kann: "Caro-Kann",
   kings_indian: "King's Indian",
-  // Add more as needed, fallback to bucket name
 };
 
 export const ChartInsights = ({ 
@@ -41,12 +41,14 @@ export const ChartInsights = ({
   openingStats, 
   whiteStats, 
   blackStats, 
-  totalGames 
+  totalGames,
+  onChatNavigate
 }: ChartInsightsProps) => {
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasGenerated, setHasGenerated] = useState(false);
+  const hasGeneratedRef = useRef(false);
+  const lastChartTypeRef = useRef(chartType);
 
   const generateInsights = async () => {
     if (openingStats.length === 0) {
@@ -145,7 +147,7 @@ export const ChartInsights = ({
         }
       }
 
-      setHasGenerated(true);
+      hasGeneratedRef.current = true;
     } catch (err) {
       console.error('Failed to generate insights:', err);
       setError('Failed to generate insights. Please try again.');
@@ -154,16 +156,26 @@ export const ChartInsights = ({
     }
   };
 
-  // Reset when chart type or data changes
+  // Auto-generate on mount and when chart type changes
   useEffect(() => {
-    setInsight('');
-    setHasGenerated(false);
-    setError(null);
-  }, [chartType, totalGames]);
+    if (openingStats.length > 0 && totalGames > 0) {
+      // Reset and regenerate if chart type changed
+      if (lastChartTypeRef.current !== chartType) {
+        hasGeneratedRef.current = false;
+        lastChartTypeRef.current = chartType;
+        setInsight('');
+        setError(null);
+      }
+      
+      if (!hasGeneratedRef.current && !isLoading) {
+        generateInsights();
+      }
+    }
+  }, [chartType, openingStats.length, totalGames]);
 
   if (error) {
     return (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mt-4">
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mb-4">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-4 w-4" />
           <span className="text-sm">{error}</span>
@@ -181,43 +193,36 @@ export const ChartInsights = ({
     );
   }
 
-  if (!hasGenerated && !isLoading) {
-    return (
-      <div className="rounded-lg border border-border bg-muted/30 p-4 mt-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={generateInsights}
-          disabled={openingStats.length === 0}
-          className="gap-2"
-        >
-          <Sparkles className="h-4 w-4" />
-          Generate AI Insights
-        </Button>
-        <p className="text-xs text-muted-foreground mt-2">
-          Get personalized analysis of this chart data
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">AI Analysis</span>
         </div>
-        {hasGenerated && !isLoading && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={generateInsights}
-            className="h-7 px-2"
-          >
-            <RefreshCw className="h-3 w-3" />
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {onChatNavigate && insight && !isLoading && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onChatNavigate}
+              className="h-7 px-3 gap-1"
+            >
+              <MessageCircle className="h-3 w-3" />
+              Discuss
+            </Button>
+          )}
+          {insight && !isLoading && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={generateInsights}
+              className="h-7 px-2"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
       </div>
       <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
         {insight || (
