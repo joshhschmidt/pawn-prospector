@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Sparkles, RefreshCw, AlertCircle, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface OpeningData {
   bucket: string;
@@ -45,22 +44,30 @@ export const ChartInsights = ({
   totalGames,
   onChatNavigate
 }: ChartInsightsProps) => {
-  const [insight, setInsight] = useState('');
+  const [briefInsight, setBriefInsight] = useState('');
+  const [fullInsight, setFullInsight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingFull, setIsLoadingFull] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasGeneratedRef = useRef(false);
+  const hasGeneratedBriefRef = useRef(false);
+  const hasGeneratedFullRef = useRef(false);
   const lastChartTypeRef = useRef(chartType);
 
-  const generateInsights = async () => {
+  const generateInsights = async (detail: 'brief' | 'full') => {
     if (openingStats.length === 0) {
       setError('No opening data available to analyze');
       return;
     }
 
-    setIsLoading(true);
+    if (detail === 'brief') {
+      setIsLoading(true);
+      setBriefInsight('');
+    } else {
+      setIsLoadingFull(true);
+      setFullInsight('');
+    }
     setError(null);
-    setInsight('');
 
     try {
       const statsWithLabels = openingStats.map(o => ({
@@ -92,6 +99,7 @@ export const ChartInsights = ({
             whiteStats: whiteWithLabels,
             blackStats: blackWithLabels,
             totalGames,
+            detail,
           }),
         }
       );
@@ -140,7 +148,11 @@ export const ChartInsights = ({
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               fullText += content;
-              setInsight(fullText);
+              if (detail === 'brief') {
+                setBriefInsight(fullText);
+              } else {
+                setFullInsight(fullText);
+              }
             }
           } catch {
             textBuffer = line + '\n' + textBuffer;
@@ -149,41 +161,50 @@ export const ChartInsights = ({
         }
       }
 
-      hasGeneratedRef.current = true;
+      if (detail === 'brief') {
+        hasGeneratedBriefRef.current = true;
+      } else {
+        hasGeneratedFullRef.current = true;
+      }
     } catch (err) {
       console.error('Failed to generate insights:', err);
       setError('Failed to generate insights. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (detail === 'brief') {
+        setIsLoading(false);
+      } else {
+        setIsLoadingFull(false);
+      }
     }
   };
 
-  // Auto-generate on mount and when chart type changes
+  // Auto-generate brief overview on mount and when chart type changes
   useEffect(() => {
     if (openingStats.length > 0 && totalGames > 0) {
-      // Reset and regenerate if chart type changed
+      // Reset if chart type changed
       if (lastChartTypeRef.current !== chartType) {
-        hasGeneratedRef.current = false;
+        hasGeneratedBriefRef.current = false;
+        hasGeneratedFullRef.current = false;
         lastChartTypeRef.current = chartType;
-        setInsight('');
+        setBriefInsight('');
+        setFullInsight('');
         setError(null);
         setIsExpanded(false);
       }
       
-      if (!hasGeneratedRef.current && !isLoading) {
-        generateInsights();
+      if (!hasGeneratedBriefRef.current && !isLoading) {
+        generateInsights('brief');
       }
     }
   }, [chartType, openingStats.length, totalGames]);
 
-  // Get first sentence as preview
-  const getFirstSentence = (text: string) => {
-    const match = text.match(/^[^.!?]*[.!?]/);
-    return match ? match[0] : text.slice(0, 120) + '...';
+  // Generate full analysis when expanded
+  const handleExpand = () => {
+    if (!isExpanded && !hasGeneratedFullRef.current && !isLoadingFull) {
+      generateInsights('full');
+    }
+    setIsExpanded(!isExpanded);
   };
-  
-  const previewText = getFirstSentence(insight);
-  const hasMoreContent = insight.length > previewText.length;
 
   if (error) {
     return (
@@ -195,7 +216,7 @@ export const ChartInsights = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={generateInsights}
+          onClick={() => generateInsights('brief')}
           className="mt-2"
         >
           <RefreshCw className="h-3 w-3 mr-1" />
@@ -207,83 +228,90 @@ export const ChartInsights = ({
 
   return (
     <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-4">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-base font-medium text-foreground">AI Analysis</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {onChatNavigate && insight && !isLoading && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onChatNavigate}
-                className="h-8 px-3 gap-1"
-              >
-                <MessageCircle className="h-3 w-3" />
-                Discuss
-              </Button>
-            )}
-            {insight && !isLoading && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={generateInsights}
-                className="h-8 px-2"
-              >
-                <RefreshCw className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-base font-medium text-foreground">AI Analysis</span>
         </div>
+        <div className="flex items-center gap-2">
+          {onChatNavigate && briefInsight && !isLoading && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onChatNavigate}
+              className="h-8 px-3 gap-1"
+            >
+              <MessageCircle className="h-3 w-3" />
+              Discuss
+            </Button>
+          )}
+          {briefInsight && !isLoading && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                hasGeneratedBriefRef.current = false;
+                hasGeneratedFullRef.current = false;
+                setFullInsight('');
+                generateInsights('brief');
+              }}
+              className="h-8 px-2"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      </div>
 
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="text-base">Analyzing your data...</span>
-          </div>
-        ) : (
-          <>
-            {/* Preview (collapsed state) */}
-            {!isExpanded && insight && (
-              <div className="text-base text-foreground/90 leading-relaxed">
-                {previewText}
-              </div>
-            )}
+      {/* Brief overview */}
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-base">Analyzing your data...</span>
+        </div>
+      ) : (
+        <div className="text-base text-foreground/90 leading-relaxed">
+          {briefInsight}
+        </div>
+      )}
 
-            {/* Full content (expanded state) */}
-            <CollapsibleContent>
-              <div className="text-base text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                {insight}
-              </div>
-            </CollapsibleContent>
+      {/* Expanded full analysis */}
+      {isExpanded && (
+        <div className="mt-4 pt-4 border-t border-primary/20">
+          {isLoadingFull ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-base">Generating detailed analysis...</span>
+            </div>
+          ) : (
+            <div className="text-base text-foreground/90 whitespace-pre-wrap leading-relaxed">
+              {fullInsight}
+            </div>
+          )}
+        </div>
+      )}
 
-            {/* More/Less button */}
-            {insight && hasMoreContent && (
-              <CollapsibleTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-2 h-8 px-3 gap-1 text-primary hover:text-primary"
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="h-4 w-4" />
-                      Less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4" />
-                      More
-                    </>
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            )}
-          </>
-        )}
-      </Collapsible>
+      {/* More/Less button */}
+      {briefInsight && !isLoading && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleExpand}
+          className="mt-3 h-8 px-3 gap-1 text-primary hover:text-primary"
+        >
+          {isExpanded ? (
+            <>
+              <ChevronUp className="h-4 w-4" />
+              Less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4" />
+              More
+            </>
+          )}
+        </Button>
+      )}
     </div>
   );
 };
