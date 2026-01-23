@@ -510,26 +510,29 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
                   onOpenChange={() => toggleOpening(opening.bucket)}
                 >
                   <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        {(() => {
-                          const OpeningIcon = getOpeningIcon(opening.bucket, opening.name);
-                          return (
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary">
-                              <OpeningIcon className="h-4 w-4" />
-                            </div>
-                          );
-                        })()}
+                    <CollapsibleTrigger className="w-full flex hover:bg-muted/30 transition-colors">
+                      {/* Icon column - matching habit card style */}
+                      {(() => {
+                        const OpeningIcon = getOpeningIcon(opening.bucket, opening.name);
+                        return (
+                          <div className="flex items-center justify-center w-20 bg-primary/5 border-r border-border">
+                            <OpeningIcon className="h-10 w-10 text-primary/40" strokeWidth={1.5} />
+                          </div>
+                        );
+                      })()}
+                      
+                      {/* Content column */}
+                      <div className="flex-1 p-5 flex items-center justify-between">
                         <div className="text-left">
                           <h4 className="font-semibold text-foreground">{opening.name}</h4>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground mt-1">
                             {opening.winRate.toFixed(0)}% win rate • {opening.games} games
                           </p>
                         </div>
+                        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${
+                          expandedOpenings.includes(opening.bucket) ? 'rotate-180' : ''
+                        }`} />
                       </div>
-                      <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${
-                        expandedOpenings.includes(opening.bucket) ? 'rotate-180' : ''
-                      }`} />
                     </CollapsibleTrigger>
                     
                     <CollapsibleContent>
