@@ -6,15 +6,15 @@ interface OpeningTableProps {
 }
 
 export const OpeningTable = ({ data }: OpeningTableProps) => {
-  const getScoreColor = (score: number) => {
-    if (score >= 55) return 'text-chess-win';
-    if (score >= 45) return 'text-foreground';
+  const getScoreColor = (winPercent: number) => {
+    if (winPercent >= 55) return 'text-chess-win';
+    if (winPercent >= 45) return 'text-foreground';
     return 'text-chess-loss';
   };
 
-  const getScoreBg = (score: number) => {
-    if (score >= 55) return 'bg-chess-win/20';
-    if (score >= 45) return 'bg-muted';
+  const getScoreBg = (winPercent: number) => {
+    if (winPercent >= 55) return 'bg-chess-win/20';
+    if (winPercent >= 45) return 'bg-muted';
     return 'bg-chess-loss/20';
   };
 
@@ -27,7 +27,7 @@ export const OpeningTable = ({ data }: OpeningTableProps) => {
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Opening</th>
               <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Games</th>
               <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">W/D/L</th>
-              <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Score</th>
+              <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Win %</th>
             </tr>
           </thead>
           <tbody>
@@ -58,11 +58,11 @@ export const OpeningTable = ({ data }: OpeningTableProps) => {
                   <span
                     className={cn(
                       'inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium',
-                      getScoreBg(row.scorePercent),
-                      getScoreColor(row.scorePercent)
+                      getScoreBg(row.winPercent),
+                      getScoreColor(row.winPercent)
                     )}
                   >
-                    {row.scorePercent.toFixed(1)}%
+                    {row.winPercent.toFixed(1)}%
                   </span>
                 </td>
               </tr>

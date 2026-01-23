@@ -10,14 +10,15 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
   const chartData = data.map(item => ({
     name: OPENING_LABELS[item.bucket],
     shortName: OPENING_LABELS[item.bucket].split(' ')[0],
-    value: type === 'frequency' ? item.games : item.scorePercent,
+    value: type === 'frequency' ? item.games : item.winPercent,
     games: item.games,
-    score: item.scorePercent,
+    winPercent: item.winPercent,
+    scorePercent: item.scorePercent,
   }));
 
-  const getBarColor = (score: number) => {
-    if (score >= 55) return 'hsl(var(--chess-win))';
-    if (score >= 45) return 'hsl(var(--accent))';
+  const getBarColor = (winPercent: number) => {
+    if (winPercent >= 55) return 'hsl(var(--chess-win))';
+    if (winPercent >= 45) return 'hsl(var(--accent))';
     return 'hsl(var(--chess-loss))';
   };
 
@@ -31,7 +32,10 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
             Games: <span className="font-medium text-foreground">{data.games}</span>
           </p>
           <p className="text-sm text-muted-foreground">
-            Score: <span className="font-medium text-foreground">{data.score.toFixed(1)}%</span>
+            Win %: <span className="font-medium text-foreground">{data.winPercent.toFixed(1)}%</span>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Score %: <span className="font-medium text-foreground">{data.scorePercent.toFixed(1)}%</span>
           </p>
         </div>
       );
@@ -61,7 +65,7 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
             axisLine={{ stroke: 'white', strokeWidth: 1.5 }}
             tickLine={{ stroke: 'white', strokeWidth: 1 }}
             label={{
-              value: type === 'frequency' ? 'Games' : 'Score %',
+              value: type === 'frequency' ? 'Games' : 'Win %',
               angle: -90,
               position: 'insideLeft',
               fill: 'hsl(var(--foreground))',
@@ -77,7 +81,7 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={type === 'frequency' ? 'hsl(var(--primary))' : getBarColor(entry.score)}
+                fill={type === 'frequency' ? 'hsl(var(--primary))' : getBarColor(entry.winPercent)}
               />
             ))}
           </Bar>

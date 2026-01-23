@@ -101,6 +101,8 @@ export const calculateOpeningStats = (games: Game[]): OpeningStats[] => {
     .filter(([_, gamesInBucket]) => gamesInBucket.length > 0)
     .map(([bucket, gamesInBucket]) => {
       const stats = calculateStats(gamesInBucket);
+      const decisiveGames = stats.wins + stats.losses;
+      const winPercent = decisiveGames > 0 ? (stats.wins / decisiveGames) * 100 : 0;
       return {
         bucket: bucket as OpeningBucket,
         games: gamesInBucket.length,
@@ -108,6 +110,7 @@ export const calculateOpeningStats = (games: Game[]): OpeningStats[] => {
         losses: stats.losses,
         draws: stats.draws,
         scorePercent: stats.scorePercent,
+        winPercent,
       };
     })
     .sort((a, b) => b.games - a.games);
