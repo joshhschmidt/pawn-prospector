@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Sparkles, Trophy, Target, Clock, Shield, Crown, Percent } from 'lucide-react';
-import { Game, FilterState, OpeningBucket, OPENING_LABELS } from '@/types/chess';
+import { useMemo } from 'react';
+import { Trophy, Target, Clock, Shield, Crown, Percent } from 'lucide-react';
+import { Game, FilterState, OpeningBucket } from '@/types/chess';
 import { filterGames, calculateStats, calculateOpeningStats } from '@/lib/analysis';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -9,19 +9,15 @@ import { StickyFilterBar } from './StickyFilterBar';
 import { KPIGrid, KPICard } from './KPICard';
 import { OpeningChart } from './OpeningChart';
 import { OpeningTable } from './OpeningTable';
-import { TopInsights } from './TopInsights';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 interface OverviewPageProps {
   games: Game[];
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
-  onNavigate?: (view: string) => void;
 }
 
-export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: OverviewPageProps) => {
+export const OverviewPage = ({ games, filters, onFiltersChange }: OverviewPageProps) => {
   const filteredGames = filterGames(games, filters);
   const stats = calculateStats(filteredGames);
   const openingStats = useMemo(() => calculateOpeningStats(filteredGames), [filteredGames]);
@@ -34,8 +30,6 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
   
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
 
-  const [showTable, setShowTable] = useState(false);
-
   // Calculate queen before castle percentage
   const gamesWithData = filteredGames.filter(g => g.queen_moves_first_10 !== null && g.castled_at_ply !== null);
   const queenBeforeCastle = gamesWithData.filter(g => 
@@ -44,16 +38,6 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
   const queenBeforeCastlePercent = gamesWithData.length > 0 
     ? (queenBeforeCastle / gamesWithData.length) * 100 
     : 0;
-
-  // Opening insights
-  const insights = useMemo(() => {
-    const minGames = 3;
-    const mostPlayed = [...openingStats].sort((a, b) => b.games - a.games).slice(0, 3);
-    const candidates = openingStats.filter((o) => o.games >= minGames);
-    const best = [...candidates].sort((a, b) => b.scorePercent - a.scorePercent).slice(0, 3);
-    const worst = [...candidates].sort((a, b) => a.scorePercent - b.scorePercent).slice(0, 3);
-    return { mostPlayed, best, worst, minGames };
-  }, [openingStats]);
 
   return (
     <PageContainer>
@@ -111,90 +95,13 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
 
       {/* Tabbed Charts Section */}
       <div className="mt-6">
-        <Tabs defaultValue="insights" className="w-full">
-          <TabsList className="mb-4 w-full grid grid-cols-6">
-            <TabsTrigger value="insights">Top Insights</TabsTrigger>
-            <TabsTrigger value="focus">Opening Focus</TabsTrigger>
+        <Tabs defaultValue="frequency" className="w-full">
+          <TabsList className="mb-4 w-full grid grid-cols-4">
             <TabsTrigger value="frequency">Frequency</TabsTrigger>
             <TabsTrigger value="success">Success Rate</TabsTrigger>
             <TabsTrigger value="color">By Color</TabsTrigger>
             <TabsTrigger value="table">All Openings</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="insights" className="mt-0">
-            <TopInsights 
-              stats={stats} 
-              openingStats={openingStats}
-              onNavigate={onNavigate}
-            />
-          </TabsContent>
-
-          <TabsContent value="focus" className="mt-0">
-            <SectionCard
-              title="Opening Focus"
-              description="Quick takeaways from your games"
-              actions={<Sparkles className="h-4 w-4 text-muted-foreground" />}
-            >
-              <div className="space-y-5 max-w-2xl">
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground">MOST PLAYED</h4>
-                  <ul className="mt-2 space-y-1">
-                    {insights.mostPlayed.map((o) => (
-                      <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
-                        <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">{o.games}g</span>
-                      </li>
-                    ))}
-                    {insights.mostPlayed.length === 0 && (
-                      <li className="text-sm text-muted-foreground">No games in the current filter.</li>
-                    )}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground">
-                    BEST SCORING (min {insights.minGames} games)
-                  </h4>
-                  <ul className="mt-2 space-y-1">
-                    {insights.best.map((o) => (
-                      <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
-                        <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">{o.scorePercent.toFixed(0)}%</span>
-                      </li>
-                    ))}
-                    {insights.best.length === 0 && (
-                      <li className="text-sm text-muted-foreground">Play a few more games to surface trends.</li>
-                    )}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground">
-                    NEEDS WORK (min {insights.minGames} games)
-                  </h4>
-                  <ul className="mt-2 space-y-1">
-                    {insights.worst.map((o) => (
-                      <li key={o.bucket} className="text-sm text-foreground flex items-center justify-between gap-3">
-                        <span className="truncate">{OPENING_LABELS[o.bucket]}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">{o.scorePercent.toFixed(0)}%</span>
-                      </li>
-                    ))}
-                    {insights.worst.length === 0 && (
-                      <li className="text-sm text-muted-foreground">Nothing stands out as weak yet.</li>
-                    )}
-                  </ul>
-                </div>
-
-                <div className="rounded-lg border border-border bg-muted/30 p-4">
-                  <p className="text-sm text-foreground">
-                    Pick <span className="font-semibold">one White</span> and{' '}
-                    <span className="font-semibold">one Black</span> opening to repeat for your next 20 games. Consistency
-                    makes patterns obvious.
-                  </p>
-                </div>
-              </div>
-            </SectionCard>
-          </TabsContent>
 
           <TabsContent value="frequency" className="mt-0">
             <SectionCard title="Opening Frequency" description="Your most played openings">
