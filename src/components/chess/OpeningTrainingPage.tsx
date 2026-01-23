@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RotateCcw, ChevronDown, CheckCircle, XCircle, Lightbulb, Trophy, ArrowLeft, Play } from 'lucide-react';
+import { Loader2, RotateCcw, ChevronDown, CheckCircle, XCircle, Lightbulb, Trophy, ArrowLeft, Play, Sparkles } from 'lucide-react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
@@ -22,6 +22,7 @@ interface PracticeLine {
   name: string;
   moves: string[];
   keyIdea: string;
+  recommended?: boolean;
 }
 
 interface OpeningWithLines {
@@ -488,11 +489,23 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
                           <button
                             key={lineIndex}
                             onClick={() => handleSelectLine(opening, line)}
-                            className="w-full text-left rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                            className={`w-full text-left rounded-xl border p-4 transition-all hover:shadow-md ${
+                              line.recommended 
+                                ? 'border-green-500/50 bg-green-500/5 hover:border-green-500' 
+                                : 'border-border bg-card hover:border-primary/50'
+                            }`}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h5 className="font-semibold text-foreground">{line.name}</h5>
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-semibold text-foreground">{line.name}</h5>
+                                  {line.recommended && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-500">
+                                      <Sparkles className="h-3 w-3" />
+                                      Recommended
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{line.keyIdea}</p>
                               </div>
                               <div className="flex items-center gap-2 text-primary flex-shrink-0 ml-2">
