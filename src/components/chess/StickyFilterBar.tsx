@@ -52,13 +52,6 @@ export const StickyFilterBar = ({
     });
   }
   
-  if (filters.color !== 'all') {
-    activeFilters.push({
-      key: 'color',
-      label: filters.color === 'white' ? 'White' : 'Black',
-      onRemove: () => onFiltersChange({ ...filters, color: 'all' }),
-    });
-  }
   
   if (filters.openingBucket !== 'all') {
     activeFilters.push({
@@ -106,25 +99,6 @@ export const StickyFilterBar = ({
         </Select>
       </div>
 
-      {/* Color */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-muted-foreground">Color</label>
-        <Select
-          value={filters.color}
-          onValueChange={(value) =>
-            onFiltersChange({ ...filters, color: value as PlayerColor | 'all' })
-          }
-        >
-          <SelectTrigger className="w-full bg-background border-border">
-            <SelectValue placeholder="Both Colors" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Both Colors</SelectItem>
-            <SelectItem value="white">White</SelectItem>
-            <SelectItem value="black">Black</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Opening */}
       <div className="space-y-2">
@@ -297,22 +271,6 @@ export const StickyFilterBar = ({
           </SelectContent>
         </Select>
 
-        {/* Color */}
-        <Select
-          value={filters.color}
-          onValueChange={(value) =>
-            onFiltersChange({ ...filters, color: value as PlayerColor | 'all' })
-          }
-        >
-          <SelectTrigger className="w-[120px] bg-background border-border h-9">
-            <SelectValue placeholder="Color" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Both Colors</SelectItem>
-            <SelectItem value="white">White</SelectItem>
-            <SelectItem value="black">Black</SelectItem>
-          </SelectContent>
-        </Select>
 
         {/* Opening */}
         <Select
