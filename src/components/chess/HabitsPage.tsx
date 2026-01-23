@@ -26,8 +26,8 @@ interface HabitInsight {
 type ColorFilter = 'all' | PlayerColor;
 
 export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: HabitsPageProps) => {
-  const [winningColorFilter, setWinningColorFilter] = useState<ColorFilter>('all');
-  const [losingColorFilter, setLosingColorFilter] = useState<ColorFilter>('all');
+  const [winningColorFilter, setWinningColorFilter] = useState<ColorFilter>('white');
+  const [losingColorFilter, setLosingColorFilter] = useState<ColorFilter>('white');
   const [winningAnalysis, setWinningAnalysis] = useState<HabitInsight[] | null>(null);
   const [losingAnalysis, setLosingAnalysis] = useState<HabitInsight[] | null>(null);
   const [isLoadingWinning, setIsLoadingWinning] = useState(false);
@@ -212,13 +212,22 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
     return (
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm flex-shrink-0">
             {index + 1}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground">{insight.title}</h3>
             <p className="text-xs text-muted-foreground mt-1">{insight.frequency}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onNavigate?.('coaching')}
+            className="text-muted-foreground hover:text-foreground flex-shrink-0"
+          >
+            <MessageCircle className="h-4 w-4 mr-1" />
+            Discuss
+          </Button>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed pl-11">
           {insight.description}
@@ -233,8 +242,8 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
           </div>
         )}
         
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 pl-11 pt-2">
+        {/* More Details Button */}
+        <div className="pl-11 pt-2">
           <Button
             variant="ghost"
             size="sm"
@@ -253,16 +262,6 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
                 {isExpanded ? 'Show Less' : 'More Details'}
               </>
             )}
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onNavigate?.('coaching')}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <MessageCircle className="h-4 w-4 mr-1" />
-            Discuss
           </Button>
         </div>
       </div>
@@ -296,33 +295,23 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
     value: ColorFilter; 
     onChange: (val: ColorFilter) => void;
   }) => (
-    <div className="grid grid-cols-3 gap-2 mb-4">
-      <button
-        onClick={() => onChange('all')}
-        className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-          value === 'all' 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-        }`}
-      >
-        All Games
-      </button>
+    <div className="grid grid-cols-2 gap-1 mb-4">
       <button
         onClick={() => onChange('white')}
-        className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
           value === 'white' 
             ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            : 'bg-muted text-muted-foreground hover:text-foreground'
         }`}
       >
         As White
       </button>
       <button
         onClick={() => onChange('black')}
-        className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
           value === 'black' 
             ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            : 'bg-muted text-muted-foreground hover:text-foreground'
         }`}
       >
         As Black
@@ -345,17 +334,12 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
         filteredCount={filteredGames.length}
       />
 
-      <Tabs defaultValue="winning" className="mt-6">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="winning" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Winning Habits
-          </TabsTrigger>
-          <TabsTrigger value="losing" className="flex items-center gap-2">
-            <TrendingDown className="h-4 w-4" />
-            Losing Habits
-          </TabsTrigger>
-        </TabsList>
+      <div className="mt-6">
+        <Tabs defaultValue="winning" className="w-full">
+          <TabsList className="mb-4 w-full grid grid-cols-2">
+            <TabsTrigger value="winning">Winning Habits</TabsTrigger>
+            <TabsTrigger value="losing">Losing Habits</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="winning">
           <ColorSubTabs value={winningColorFilter} onChange={setWinningColorFilter} />
@@ -399,6 +383,7 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </PageContainer>
   );
 };
