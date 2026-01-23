@@ -125,7 +125,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
         <Tabs defaultValue="frequency" className="w-full">
           <TabsList className="mb-4 w-full grid grid-cols-3">
             <TabsTrigger value="frequency">Frequency</TabsTrigger>
-            <TabsTrigger value="success">Success Rate</TabsTrigger>
+            <TabsTrigger value="winrate">Win Rate</TabsTrigger>
             <TabsTrigger value="table">All Openings</TabsTrigger>
           </TabsList>
 
@@ -136,7 +136,7 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
                 chartType="frequency"
                 openingStats={getStatsForColor(frequencyColor)}
                 totalGames={stats.totalGames}
-                onChatNavigate={() => onNavigate?.('training')}
+                onChatNavigate={() => onNavigate?.('coaching')}
               />
               <div className="h-[400px]">
                 <OpeningChart data={getStatsForColor(frequencyColor).slice(0, 10)} type="frequency" />
@@ -144,14 +144,14 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
             </SectionCard>
           </TabsContent>
 
-          <TabsContent value="success" className="mt-0">
+          <TabsContent value="winrate" className="mt-0">
             <SectionCard title="Opening Win Rate" description="Win % by opening (excluding draws)">
               <ColorSubTabs value={successColor} onChange={setSuccessColor} />
               <ChartInsights
                 chartType="success"
                 openingStats={getStatsForColor(successColor)}
                 totalGames={stats.totalGames}
-                onChatNavigate={() => onNavigate?.('training')}
+                onChatNavigate={() => onNavigate?.('coaching')}
               />
               <div className="h-[400px]">
                 <OpeningChart data={getStatsForColor(successColor).slice(0, 10)} type="performance" />
