@@ -220,12 +220,12 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
             <p className="text-xs text-muted-foreground mt-1">{insight.frequency}</p>
           </div>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => onNavigate?.('coaching')}
-            className="text-muted-foreground hover:text-foreground flex-shrink-0"
+            className="h-8 px-3 gap-1 flex-shrink-0"
           >
-            <MessageCircle className="h-4 w-4 mr-1" />
+            <MessageCircle className="h-3 w-3" />
             Discuss
           </Button>
         </div>
