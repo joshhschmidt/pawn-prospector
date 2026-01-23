@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Sparkles, RefreshCw, AlertCircle, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -50,9 +50,12 @@ export const ChartInsights = ({
   const [isLoadingFull, setIsLoadingFull] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [retryCountdown, setRetryCountdown] = useState(0);
   const hasGeneratedBriefRef = useRef(false);
   const hasGeneratedFullRef = useRef(false);
   const lastChartTypeRef = useRef(chartType);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const generateInsights = async (detail: 'brief' | 'full') => {
     if (openingStats.length === 0) {
@@ -106,8 +109,30 @@ export const ChartInsights = ({
 
       if (!response.ok) {
         if (response.status === 429) {
-          toast.error('Rate limit exceeded. Please wait a moment and try again.');
-          setError('Rate limit exceeded. Please try again later.');
+          const retryAfter = 10; // Wait 10 seconds before retry
+          setRetryCountdown(retryAfter);
+          setError(`Rate limited. Auto-retrying in ${retryAfter}s...`);
+          
+          // Start countdown
+          const countdownInterval = setInterval(() => {
+            setRetryCountdown(prev => {
+              if (prev <= 1) {
+                clearInterval(countdownInterval);
+                return 0;
+              }
+              setError(`Rate limited. Auto-retrying in ${prev - 1}s...`);
+              return prev - 1;
+            });
+          }, 1000);
+          
+          // Auto-retry after delay
+          retryTimerRef.current = setTimeout(() => {
+            clearInterval(countdownInterval);
+            setError(null);
+            setRetryCountdown(0);
+            generateInsights(detail);
+          }, retryAfter * 1000);
+          
           return;
         }
         if (response.status === 402) {
@@ -178,7 +203,15 @@ export const ChartInsights = ({
     }
   };
 
-  // Auto-generate brief overview on mount and when chart type changes
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, []);
+
+  // Auto-generate brief overview on mount and when chart type changes (debounced)
   useEffect(() => {
     if (openingStats.length > 0 && totalGames > 0) {
       // Reset if chart type changed
@@ -190,10 +223,16 @@ export const ChartInsights = ({
         setFullInsight('');
         setError(null);
         setIsExpanded(false);
+        setRetryCountdown(0);
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       }
       
       if (!hasGeneratedBriefRef.current && !isLoading) {
-        generateInsights('brief');
+        // Debounce to prevent rapid API calls when switching tabs quickly
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          generateInsights('brief');
+        }, 500);
       }
     }
   }, [chartType, openingStats.length, totalGames]);
@@ -206,7 +245,7 @@ export const ChartInsights = ({
     setIsExpanded(!isExpanded);
   };
 
-  if (error) {
+  if (error && retryCountdown === 0) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mb-4">
         <div className="flex items-center gap-2 text-destructive">
@@ -222,6 +261,17 @@ export const ChartInsights = ({
           <RefreshCw className="h-3 w-3 mr-1" />
           Retry
         </Button>
+      </div>
+    );
+  }
+
+  if (retryCountdown > 0) {
+    return (
+      <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 mb-4">
+        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+          <span className="text-base">Rate limited. Auto-retrying in {retryCountdown}s...</span>
+        </div>
       </div>
     );
   }
