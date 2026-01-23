@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, Loader2, Lightbulb, ChevronDown, MessageCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Loader2, Lightbulb, ChevronDown, MessageCircle, Zap, Shield, Target, Crown, Swords, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 
@@ -204,68 +204,95 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
     }
   }, [filteredGames.length, filters, losingColorFilter]);
 
+  // Icons for habit cards
+  const habitIcons = [
+    { icon: Zap, color: 'text-primary' },
+    { icon: Shield, color: 'text-primary' },
+    { icon: Target, color: 'text-primary' },
+    { icon: Crown, color: 'text-primary' },
+    { icon: Swords, color: 'text-primary' },
+    { icon: Clock, color: 'text-primary' },
+  ];
+
   const HabitCard = ({ insight, index, type }: { insight: HabitInsight; index: number; type: 'winning' | 'losing' }) => {
     const cardKey = `${type}-${index}`;
     const isExpanded = expandedCards[cardKey];
     const isLoadingDetail = loadingDetails[cardKey];
+    const IconComponent = habitIcons[index % habitIcons.length].icon;
     
     return (
-      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm flex-shrink-0">
-            {index + 1}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground">{insight.title}</h3>
-            <p className="text-xs text-muted-foreground mt-1">{insight.frequency}</p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const context = `I want to discuss this ${type} habit: "${insight.title}". ${insight.description}`;
-              onNavigate?.('coaching', context);
-            }}
-            className="h-8 px-3 gap-1 flex-shrink-0"
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="flex">
+          {/* Large icon column */}
+          <div 
+            className={`flex items-center justify-center bg-primary/5 border-r border-border transition-all duration-300 ease-out ${
+              isExpanded ? 'w-14 py-4' : 'w-20 py-6'
+            }`}
           >
-            <MessageCircle className="h-3 w-3" />
-            Discuss
-          </Button>
-        </div>
-        <p className="text-sm text-muted-foreground leading-relaxed pl-11">
-          {insight.description}
-        </p>
-        
-        {/* Expanded Details */}
-        {isExpanded && insight.detailedExplanation && (
-          <div className="pl-11 pt-2 border-t border-border mt-3">
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-              {insight.detailedExplanation}
+            <IconComponent 
+              className={`text-primary/40 transition-all duration-300 ease-out ${
+                isExpanded ? 'h-6 w-6' : 'h-12 w-12'
+              }`}
+              strokeWidth={1.5}
+            />
+          </div>
+          
+          {/* Content column */}
+          <div className="flex-1 p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground">{insight.title}</h3>
+                <p className="text-xs text-muted-foreground mt-1">{insight.frequency}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const context = `I want to discuss this ${type} habit: "${insight.title}". ${insight.description}`;
+                  onNavigate?.('coaching', context);
+                }}
+                className="h-8 px-3 gap-1 flex-shrink-0"
+              >
+                <MessageCircle className="h-3 w-3" />
+                Discuss
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {insight.description}
             </p>
-          </div>
-        )}
-        
-        {/* More Details Button */}
-        <div className="pl-11 pt-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleExpanded(cardKey, insight, type)}
-            disabled={isLoadingDetail}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            {isLoadingDetail ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                {isExpanded ? 'Show Less' : 'More Details'}
-              </>
+            
+            {/* Expanded Details */}
+            {isExpanded && insight.detailedExplanation && (
+              <div className="pt-3 border-t border-border mt-3">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                  {insight.detailedExplanation}
+                </p>
+              </div>
             )}
-          </Button>
+            
+            {/* More Details Button */}
+            <div className="pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleExpanded(cardKey, insight, type)}
+                disabled={isLoadingDetail}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {isLoadingDetail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className={`h-4 w-4 mr-1 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                    {isExpanded ? 'Show Less' : 'More Details'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );
