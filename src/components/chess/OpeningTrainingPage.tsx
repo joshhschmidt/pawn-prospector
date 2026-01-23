@@ -52,6 +52,7 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [practiceComplete, setPracticeComplete] = useState(false);
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
   const filteredGames = filterGames(games, filters);
   
@@ -133,6 +134,7 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
     setFeedback(null);
     setShowHint(false);
     setPracticeComplete(false);
+    setSelectedSquare(null);
   }, []);
 
   const handleSelectLine = (opening: OpeningWithLines, line: PracticeLine) => {
@@ -213,6 +215,45 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
     }
   }, [game, selectedLine, currentMoveIndex, isPlayerTurn, practiceComplete]);
 
+  // Handle click-to-move
+  const onSquareClick = useCallback((square: string) => {
+    if (!selectedLine || !isPlayerTurn() || practiceComplete) {
+      setSelectedSquare(null);
+      return;
+    }
+
+    // If we already have a selected square, try to make a move
+    if (selectedSquare) {
+      const moveSuccessful = onDrop(selectedSquare, square);
+      setSelectedSquare(null);
+      if (moveSuccessful) return;
+    }
+
+    // Check if there's a piece on this square that belongs to the player
+    const piece = game.get(square as any);
+    if (piece) {
+      const isWhitePiece = piece.color === 'w';
+      const isPlayerPiece = (selectedLine.color === 'white' && isWhitePiece) || 
+                            (selectedLine.color === 'black' && !isWhitePiece);
+      if (isPlayerPiece) {
+        setSelectedSquare(square);
+        return;
+      }
+    }
+    
+    setSelectedSquare(null);
+  }, [selectedLine, selectedSquare, isPlayerTurn, practiceComplete, game, onDrop]);
+
+  // Custom square styles for selected piece
+  const customSquareStyles = useMemo(() => {
+    if (!selectedSquare) return {};
+    return {
+      [selectedSquare]: {
+        backgroundColor: 'rgba(255, 255, 0, 0.4)',
+      }
+    };
+  }, [selectedSquare]);
+
   const boardOrientation = selectedLine?.color === 'black' ? 'black' : 'white';
 
   return (
@@ -277,9 +318,12 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
                     position={game.fen()}
                     onPieceDrop={(sourceSquare, targetSquare) => {
                       if (!targetSquare) return false;
+                      setSelectedSquare(null);
                       return onDrop(sourceSquare, targetSquare);
                     }}
+                    onSquareClick={onSquareClick}
                     boardOrientation={boardOrientation}
+                    customSquareStyles={customSquareStyles}
                     customBoardStyle={{
                       borderRadius: '8px',
                       boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)'
