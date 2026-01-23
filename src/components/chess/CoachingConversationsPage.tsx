@@ -209,10 +209,11 @@ export const CoachingConversationsPage = ({
 
   const boardOrientation = practiceColor === 'black' ? 'black' : 'white';
 
-  // Full-screen practice mode (matching Opening Training exactly)
-  if (practiceLine) {
-    return (
-      <PageContainer>
+  // Render both views, hide one based on practiceLine state to preserve conversation
+  return (
+    <PageContainer>
+      {/* Full-screen practice mode (matching Opening Training exactly) */}
+      {practiceLine && (
         <div className="space-y-4">
           <Button variant="ghost" onClick={handleBackToConversation} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -356,30 +357,28 @@ export const CoachingConversationsPage = ({
             </div>
           </div>
         </div>
-      </PageContainer>
-    );
-  }
+      )}
 
-  // Chat mode
-  return (
-    <PageContainer>
-      <PageHeader 
-        title="Coaching Conversations"
-        subtitle="Chat with your AI chess coach for personalized advice"
-      />
-
-      <SectionCard 
-        title="AI Coach" 
-        description="Ask questions about your games, get training tips, and request opening lines to practice"
-      >
-        <CoachChat 
-          playerStats={playerStats}
-          username={username}
-          initialContext={initialContext}
-          onContextConsumed={onContextConsumed}
-          onPracticeLineSelected={handlePracticeLineSelected}
+      {/* Chat mode - always mounted but hidden when practicing */}
+      <div className={practiceLine ? 'hidden' : ''}>
+        <PageHeader 
+          title="Coaching Conversations"
+          subtitle="Chat with your AI chess coach for personalized advice"
         />
-      </SectionCard>
+
+        <SectionCard 
+          title="AI Coach" 
+          description="Ask questions about your games, get training tips, and request opening lines to practice"
+        >
+          <CoachChat 
+            playerStats={playerStats}
+            username={username}
+            initialContext={initialContext}
+            onContextConsumed={onContextConsumed}
+            onPracticeLineSelected={handlePracticeLineSelected}
+          />
+        </SectionCard>
+      </div>
     </PageContainer>
   );
 };
