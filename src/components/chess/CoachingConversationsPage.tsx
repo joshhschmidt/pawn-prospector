@@ -52,19 +52,17 @@ export const CoachingConversationsPage = ({
         subtitle="Chat with your AI chess coach for personalized advice"
       />
 
-      <div className="max-w-4xl">
-        <SectionCard 
-          title="AI Coach" 
-          description="Ask questions about your games, get training tips, and discuss improvement strategies"
-        >
-          <CoachChat 
-            playerStats={playerStats}
-            username={username}
-            initialContext={initialContext}
-            onContextConsumed={onContextConsumed}
-          />
-        </SectionCard>
-      </div>
+      <SectionCard 
+        title="AI Coach" 
+        description="Ask questions about your games, get training tips, and discuss improvement strategies"
+      >
+        <CoachChat 
+          playerStats={playerStats}
+          username={username}
+          initialContext={initialContext}
+          onContextConsumed={onContextConsumed}
+        />
+      </SectionCard>
     </PageContainer>
   );
 };
