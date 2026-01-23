@@ -509,8 +509,8 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
                   open={expandedOpenings.includes(opening.bucket)}
                   onOpenChange={() => toggleOpening(opening.bucket)}
                 >
-                  <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <CollapsibleTrigger className="w-full flex hover:bg-muted/30 transition-colors">
+                  <div className="opening-card rounded-xl border border-border bg-card overflow-hidden">
+                    <CollapsibleTrigger className="w-full flex transition-colors">
                       {/* Icon column - matching habit card style */}
                       {(() => {
                         const OpeningIcon = getOpeningIcon(opening.bucket, opening.name);

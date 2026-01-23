@@ -153,6 +153,27 @@
     @apply opacity-100;
   }
 
+  /* Opening card hover effect */
+  .opening-card {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+
+  .opening-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none;
+    background: radial-gradient(circle at 30% 50%, hsla(217 91% 60% / 0.06), transparent 60%);
+  }
+
+  .opening-card:hover {
+    @apply border-primary/30 shadow-lg;
+    box-shadow: 0 8px 30px -12px hsla(217 91% 60% / 0.25);
+    transform: translateY(-2px);
+  }
+
+  .opening-card:hover::before {
+    @apply opacity-100;
+  }
+
   /* Chess piece pattern background */
   .chess-pattern {
     background-image: 
