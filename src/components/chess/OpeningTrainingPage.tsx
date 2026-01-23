@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RotateCcw, ChevronDown, CheckCircle, XCircle, Lightbulb, Trophy, ArrowLeft, Play, Sparkles } from 'lucide-react';
+import { Loader2, RotateCcw, ChevronDown, CheckCircle, XCircle, Lightbulb, Trophy, ArrowLeft, Play, Sparkles, Swords, Crown, Castle, Shield, Target, Zap, Brain, Crosshair, type LucideIcon } from 'lucide-react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
@@ -278,6 +278,50 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
     return styles;
   }, [selectedSquare, game]);
 
+  // Get contextual icon based on opening name/bucket
+  const getOpeningIcon = (bucket: string, name: string): LucideIcon => {
+    const text = `${bucket} ${name}`.toLowerCase();
+    
+    // Gambit openings - aggressive/sacrifice
+    if (text.includes('gambit')) {
+      return Swords;
+    }
+    // Queen-related openings
+    if (text.includes('queen')) {
+      return Crown;
+    }
+    // King-related or castling openings
+    if (text.includes('king') && !text.includes('indian')) {
+      return Castle;
+    }
+    // Indian defenses (strategic)
+    if (text.includes('indian') || text.includes('nimzo') || text.includes('grunfeld')) {
+      return Brain;
+    }
+    // Italian/Spanish classical openings
+    if (text.includes('italian') || text.includes('ruy') || text.includes('spanish') || text.includes('giuoco')) {
+      return Target;
+    }
+    // Sicilian variations (sharp/tactical)
+    if (text.includes('sicilian') || text.includes('dragon') || text.includes('najdorf')) {
+      return Zap;
+    }
+    // Defensive systems
+    if (text.includes('defense') || text.includes('caro') || text.includes('french') || text.includes('slav')) {
+      return Shield;
+    }
+    // London/system openings
+    if (text.includes('london') || text.includes('system') || text.includes('colle')) {
+      return Castle;
+    }
+    // Attack openings
+    if (text.includes('attack') || text.includes('vienna') || text.includes('scotch')) {
+      return Crosshair;
+    }
+    // Default
+    return Trophy;
+  };
+
   const boardOrientation = selectedLine?.color === 'black' ? 'black' : 'white';
 
   return (
@@ -468,9 +512,14 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
                   <div className="rounded-xl border border-border bg-card overflow-hidden">
                     <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
-                          {index + 1}
-                        </div>
+                        {(() => {
+                          const OpeningIcon = getOpeningIcon(opening.bucket, opening.name);
+                          return (
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary">
+                              <OpeningIcon className="h-4 w-4" />
+                            </div>
+                          );
+                        })()}
                         <div className="text-left">
                           <h4 className="font-semibold text-foreground">{opening.name}</h4>
                           <p className="text-sm text-muted-foreground">
