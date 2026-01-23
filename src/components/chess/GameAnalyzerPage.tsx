@@ -230,7 +230,7 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
               </div>
             </CardHeader>
             <CardContent>
-              <div className="aspect-square max-w-md mx-auto">
+              <div className="aspect-square max-w-2xl mx-auto">
                 <Chessboard
                   position={getCurrentFen()}
                   boardOrientation={selectedGame.player_color}
