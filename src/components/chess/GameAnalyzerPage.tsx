@@ -218,9 +218,9 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Chessboard */}
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Chessboard (2/3 width on desktop, matching other overlays) */}
+          <Card className="lg:col-span-2">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Move {expandedMoment.moveNumber}. {expandedMoment.move}</CardTitle>
