@@ -30,6 +30,8 @@ interface PlayerStats {
 interface CoachChatProps {
   playerStats: PlayerStats;
   username: string;
+  initialContext?: string | null;
+  onContextConsumed?: () => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chess-coach`;
@@ -41,10 +43,11 @@ const SUGGESTED_QUESTIONS = [
   "Create a training plan for me",
 ];
 
-export const CoachChat = ({ playerStats, username }: CoachChatProps) => {
+export const CoachChat = ({ playerStats, username, initialContext, onContextConsumed }: CoachChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [contextSent, setContextSent] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -53,6 +56,15 @@ export const CoachChat = ({ playerStats, username }: CoachChatProps) => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Auto-send initial context when provided
+  useEffect(() => {
+    if (initialContext && !contextSent && messages.length === 0) {
+      setContextSent(true);
+      sendMessage(initialContext);
+      onContextConsumed?.();
+    }
+  }, [initialContext, contextSent, messages.length]);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
