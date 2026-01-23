@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Loader2, Sparkles, Play } from 'lucide-react';
+import { Send, GraduationCap, User, Loader2, Sparkles, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -255,7 +255,7 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border bg-secondary/30">
         <div className="rounded-lg bg-accent/20 p-2">
-          <Bot className="h-5 w-5 text-accent" />
+          <GraduationCap className="h-5 w-5 text-accent" />
         </div>
         <div>
           <h3 className="font-semibold text-foreground">AI Chess Coach</h3>
@@ -302,7 +302,7 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
                 >
                   {message.role === 'assistant' && (
                     <div className="rounded-full bg-accent/20 p-2 h-8 w-8 flex items-center justify-center shrink-0">
-                      <Bot className="h-4 w-4 text-accent" />
+                      <GraduationCap className="h-4 w-4 text-accent" />
                     </div>
                   )}
                   <div
