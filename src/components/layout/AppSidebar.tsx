@@ -4,7 +4,6 @@ import {
   BarChart3, 
   BookOpen, 
   Brain, 
-  Flag, 
   Target, 
   FileDown,
   ArrowLeft,
@@ -49,8 +48,7 @@ const mainNavItems = [
 const analysisNavItems = [
   { id: 'overview', title: 'Overview', icon: BarChart3 },
   { id: 'habits', title: 'Habits', icon: Brain },
-  { id: 'tactics', title: 'Tactics Flags', icon: Flag },
-  { id: 'training', title: 'Training Plan', icon: Target },
+  { id: 'training', title: 'Opening Training', icon: Target },
   { id: 'coaching', title: 'Coaching Conversations', icon: MessageCircle },
 ];
 
