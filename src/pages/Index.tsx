@@ -35,6 +35,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [currentView, setCurrentView] = useState('overview');
+  const [coachingContext, setCoachingContext] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     dateRange: { start: null, end: null },
     timeControl: 'all',
@@ -134,10 +135,16 @@ const Index = ({ demoMode = false }: IndexProps) => {
       );
     }
     if (currentView === 'overview') {
-      return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={setCurrentView} />;
+      return <OverviewPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={(view, context) => {
+        setCurrentView(view);
+        if (context) setCoachingContext(context);
+      }} />;
     }
     if (currentView === 'habits') {
-      return <HabitsPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={setCurrentView} />;
+      return <HabitsPage games={games} filters={filters} onFiltersChange={setFilters} onNavigate={(view, context) => {
+        setCurrentView(view);
+        if (context) setCoachingContext(context);
+      }} />;
     }
     if (currentView === 'tactics') {
       return <TacticsPage games={games} filters={filters} onFiltersChange={setFilters} />;
@@ -146,7 +153,14 @@ const Index = ({ demoMode = false }: IndexProps) => {
       return <TrainingPage games={games} username={username} filters={filters} onFiltersChange={setFilters} />;
     }
     if (currentView === 'coaching') {
-      return <CoachingConversationsPage games={games} username={username} filters={filters} onFiltersChange={setFilters} />;
+      return <CoachingConversationsPage 
+        games={games} 
+        username={username} 
+        filters={filters} 
+        onFiltersChange={setFilters} 
+        initialContext={coachingContext}
+        onContextConsumed={() => setCoachingContext(null)}
+      />;
     }
     if (currentView === 'export') {
       return <ExportPage games={games} username={username} />;

@@ -16,7 +16,7 @@ interface OverviewPageProps {
   games: Game[];
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
-  onNavigate?: (view: string) => void;
+  onNavigate?: (view: string, context?: string) => void;
 }
 
 type ColorFilter = 'all' | 'white' | 'black';

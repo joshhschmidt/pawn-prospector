@@ -10,13 +10,17 @@ interface CoachingConversationsPageProps {
   username: string;
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
+  initialContext?: string | null;
+  onContextConsumed?: () => void;
 }
 
 export const CoachingConversationsPage = ({ 
   games, 
   username, 
   filters, 
-  onFiltersChange 
+  onFiltersChange,
+  initialContext,
+  onContextConsumed
 }: CoachingConversationsPageProps) => {
   const filteredGames = filterGames(games, filters);
   const stats = calculateStats(filteredGames);
@@ -56,6 +60,8 @@ export const CoachingConversationsPage = ({
           <CoachChat 
             playerStats={playerStats}
             username={username}
+            initialContext={initialContext}
+            onContextConsumed={onContextConsumed}
           />
         </SectionCard>
       </div>

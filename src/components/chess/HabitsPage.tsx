@@ -13,7 +13,7 @@ interface HabitsPageProps {
   games: Game[];
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
-  onNavigate?: (view: string) => void;
+  onNavigate?: (view: string, context?: string) => void;
 }
 
 interface HabitInsight {
@@ -222,7 +222,10 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onNavigate?.('coaching')}
+            onClick={() => {
+              const context = `I want to discuss this ${type} habit: "${insight.title}". ${insight.description}`;
+              onNavigate?.('coaching', context);
+            }}
             className="h-8 px-3 gap-1 flex-shrink-0"
           >
             <MessageCircle className="h-3 w-3" />
