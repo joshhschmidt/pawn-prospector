@@ -235,6 +235,12 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
                   position={getCurrentFen()}
                   boardOrientation={selectedGame.player_color}
                   arePiecesDraggable={false}
+                  customBoardStyle={{
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)'
+                  }}
+                  customDarkSquareStyle={{ backgroundColor: 'hsl(217, 91%, 35%)' }}
+                  customLightSquareStyle={{ backgroundColor: 'hsl(0, 0%, 85%)' }}
                 />
               </div>
               
@@ -426,8 +432,11 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
                                   boardOrientation={selectedGame.player_color}
                                   arePiecesDraggable={false}
                                   customBoardStyle={{ 
-                                    borderRadius: '4px'
+                                    borderRadius: '4px',
+                                    boxShadow: '0 2px 8px -2px rgba(0,0,0,0.3)'
                                   }}
+                                  customDarkSquareStyle={{ backgroundColor: 'hsl(217, 91%, 35%)' }}
+                                  customLightSquareStyle={{ backgroundColor: 'hsl(0, 0%, 85%)' }}
                                 />
                               </div>
                             )}
