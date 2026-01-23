@@ -16,6 +16,7 @@ import { HabitsPage } from '@/components/chess/HabitsPage';
 import { TacticsPage } from '@/components/chess/TacticsPage';
 import { TrainingPage } from '@/components/chess/TrainingPage';
 import { ExportPage } from '@/components/chess/ExportPage';
+import { CoachingConversationsPage } from '@/components/chess/CoachingConversationsPage';
 import { EmptyState, LoadingState } from '@/components/chess/EmptyLoadingStates';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -58,7 +59,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
 
   // Handle deep linking to specific views
   useEffect(() => {
-    if (viewParam && ['overview', 'habits', 'tactics', 'training', 'export'].includes(viewParam)) {
+    if (viewParam && ['overview', 'habits', 'tactics', 'training', 'export', 'coaching'].includes(viewParam)) {
       setCurrentView(viewParam);
     }
   }, [viewParam]);
@@ -143,6 +144,9 @@ const Index = ({ demoMode = false }: IndexProps) => {
     }
     if (currentView === 'training') {
       return <TrainingPage games={games} username={username} filters={filters} onFiltersChange={setFilters} />;
+    }
+    if (currentView === 'coaching') {
+      return <CoachingConversationsPage games={games} username={username} filters={filters} onFiltersChange={setFilters} />;
     }
     if (currentView === 'export') {
       return <ExportPage games={games} username={username} />;

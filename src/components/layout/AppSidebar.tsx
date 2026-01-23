@@ -8,7 +8,8 @@ import {
   Target, 
   FileDown,
   ArrowLeft,
-  ChevronDown
+  ChevronDown,
+  MessageCircle
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -50,6 +51,7 @@ const analysisNavItems = [
   { id: 'habits', title: 'Habits', icon: Brain },
   { id: 'tactics', title: 'Tactics Flags', icon: Flag },
   { id: 'training', title: 'Training Plan', icon: Target },
+  { id: 'coaching', title: 'Coaching Conversations', icon: MessageCircle },
 ];
 
 const otherNavItems = [
