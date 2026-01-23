@@ -47,7 +47,6 @@ const mainNavItems = [
 
 const analysisNavItems = [
   { id: 'overview', title: 'Overview', icon: BarChart3 },
-  { id: 'openings', title: 'Openings', icon: BookOpen },
   { id: 'habits', title: 'Habits', icon: Brain },
   { id: 'tactics', title: 'Tactics Flags', icon: Flag },
   { id: 'training', title: 'Training Plan', icon: Target },
