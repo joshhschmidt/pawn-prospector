@@ -103,10 +103,6 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
       }));
       
       setOpeningsWithLines(openings);
-      // Auto-expand the first opening
-      if (openings.length > 0) {
-        setExpandedOpenings([openings[0].bucket]);
-      }
     } catch (err) {
       console.error('Error fetching opening lines:', err);
       setError('Failed to get opening lines. Please try again.');
@@ -425,27 +421,30 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
                           <button
                             key={lineIndex}
                             onClick={() => handleSelectLine(opening, line)}
-                            className="w-full text-left p-3 rounded-lg border border-border bg-background hover:border-primary/50 hover:bg-muted/30 transition-all group"
+                            className="w-full text-left rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
                           >
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h5 className="font-medium text-foreground text-sm">{line.name}</h5>
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{line.keyIdea}</p>
+                                <h5 className="font-semibold text-foreground">{line.name}</h5>
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{line.keyIdea}</p>
                               </div>
-                              <div className="flex items-center gap-2 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Play className="h-4 w-4" />
-                                <span className="text-sm font-medium">Practice</span>
+                              <div className="flex items-center gap-2 text-primary flex-shrink-0 ml-2">
+                                <Play className="h-5 w-5" />
                               </div>
                             </div>
-                            <p className="text-xs font-mono text-muted-foreground mt-2 truncate">
-                              {line.moves.slice(0, 6).map((move, i) => (
-                                <span key={i}>
-                                  {i % 2 === 0 && `${Math.floor(i/2) + 1}.`}
-                                  {move}{' '}
-                                </span>
-                              ))}
-                              {line.moves.length > 6 && '...'}
-                            </p>
+                            
+                            <div className="mt-3 pt-3 border-t border-border">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Moves</p>
+                              <p className="text-xs font-mono text-foreground truncate">
+                                {line.moves.slice(0, 6).map((move, i) => (
+                                  <span key={i}>
+                                    {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}.</span>}
+                                    {move}{' '}
+                                  </span>
+                                ))}
+                                {line.moves.length > 6 && '...'}
+                              </p>
+                            </div>
                           </button>
                         ))}
                       </div>
