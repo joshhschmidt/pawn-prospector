@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Game, FilterState, OpeningBucket, OPENING_LABELS, TIME_CONTROL_LABELS } from '@/types/chess';
 import { filterGames } from '@/lib/analysis';
+import { parsePGN } from '@/lib/pgn-parser';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
@@ -117,7 +118,18 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
   }, [analysis?.summary, selectedGame]);
 
   const analyzeGame = async (game: Game) => {
-    setSelectedGame(game);
+    // Extract moves from PGN if not available
+    let gameMoves = game.moves;
+    if ((!gameMoves || gameMoves.length === 0) && game.pgn_raw) {
+      const parsed = parsePGN(game.pgn_raw);
+      if (parsed.length > 0 && parsed[0].moves.length > 0) {
+        gameMoves = parsed[0].moves;
+      }
+    }
+
+    // Create a game object with the moves for state
+    const gameWithMoves = { ...game, moves: gameMoves };
+    setSelectedGame(gameWithMoves);
     
     // Check cache first
     if (analysisCache.has(game.id)) {
@@ -125,7 +137,7 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
       return;
     }
 
-    if (!game.moves || game.moves.length === 0) {
+    if (!gameMoves || gameMoves.length === 0) {
       toast.error('This game has no moves to analyze');
       return;
     }
@@ -136,7 +148,7 @@ export const GameAnalyzerPage = ({ games, filters, onFiltersChange }: GameAnalyz
     try {
       const { data, error } = await supabase.functions.invoke('analyze-game', {
         body: {
-          moves: game.moves,
+          moves: gameMoves,
           playerColor: game.player_color,
           result: game.result,
           opening: game.opening_bucket ? OPENING_LABELS[game.opening_bucket] : 'Unknown',
