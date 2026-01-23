@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, RefreshCw, AlertCircle, MessageCircle } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertCircle, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface OpeningData {
   bucket: string;
@@ -47,6 +48,7 @@ export const ChartInsights = ({
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const hasGeneratedRef = useRef(false);
   const lastChartTypeRef = useRef(chartType);
 
@@ -165,6 +167,7 @@ export const ChartInsights = ({
         lastChartTypeRef.current = chartType;
         setInsight('');
         setError(null);
+        setIsExpanded(false);
       }
       
       if (!hasGeneratedRef.current && !isLoading) {
@@ -173,12 +176,17 @@ export const ChartInsights = ({
     }
   }, [chartType, openingStats.length, totalGames]);
 
+  // Get preview text (first ~100 characters)
+  const previewText = insight.length > 120 
+    ? insight.slice(0, 120).trim() + '...' 
+    : insight;
+
   if (error) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mb-4">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">{error}</span>
+          <span className="text-base">{error}</span>
         </div>
         <Button
           variant="outline"
@@ -195,43 +203,83 @@ export const ChartInsights = ({
 
   return (
     <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">AI Analysis</span>
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-base font-medium text-foreground">AI Analysis</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {onChatNavigate && insight && !isLoading && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onChatNavigate}
+                className="h-8 px-3 gap-1"
+              >
+                <MessageCircle className="h-3 w-3" />
+                Discuss
+              </Button>
+            )}
+            {insight && !isLoading && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={generateInsights}
+                className="h-8 px-2"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {onChatNavigate && insight && !isLoading && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onChatNavigate}
-              className="h-7 px-3 gap-1"
-            >
-              <MessageCircle className="h-3 w-3" />
-              Discuss
-            </Button>
-          )}
-          {insight && !isLoading && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={generateInsights}
-              className="h-7 px-2"
-            >
-              <RefreshCw className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-      </div>
-      <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
-        {insight || (
+
+        {isLoading ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            Analyzing your data...
+            <span className="text-base">Analyzing your data...</span>
           </div>
+        ) : (
+          <>
+            {/* Preview (collapsed state) */}
+            {!isExpanded && insight && (
+              <div className="text-base text-foreground/90 leading-relaxed">
+                {previewText}
+              </div>
+            )}
+
+            {/* Full content (expanded state) */}
+            <CollapsibleContent>
+              <div className="text-base text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                {insight}
+              </div>
+            </CollapsibleContent>
+
+            {/* More/Less button */}
+            {insight && insight.length > 120 && (
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 h-8 px-3 gap-1 text-primary hover:text-primary"
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="h-4 w-4" />
+                      Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      More
+                    </>
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            )}
+          </>
         )}
-      </div>
+      </Collapsible>
     </div>
   );
 };
