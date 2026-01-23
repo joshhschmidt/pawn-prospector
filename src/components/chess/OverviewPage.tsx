@@ -144,10 +144,9 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
       {/* Tabbed Charts Section */}
       <div className="mt-6">
         <Tabs defaultValue="frequency" className="w-full">
-          <TabsList className="mb-4 w-full grid grid-cols-4">
+          <TabsList className="mb-4 w-full grid grid-cols-3">
             <TabsTrigger value="frequency">Frequency</TabsTrigger>
             <TabsTrigger value="success">Success Rate</TabsTrigger>
-            <TabsTrigger value="color">By Color</TabsTrigger>
             <TabsTrigger value="table">All Openings</TabsTrigger>
           </TabsList>
 
@@ -177,33 +176,6 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
               />
               <div className="h-[400px]">
                 <OpeningChart data={getStatsForColor(successColor).slice(0, 10)} type="performance" />
-              </div>
-            </SectionCard>
-          </TabsContent>
-
-          <TabsContent value="color" className="mt-0">
-            <SectionCard title="Performance by Color" description="Which openings work best for you as White vs Black">
-              <ChartInsights
-                chartType="color"
-                openingStats={openingStats}
-                whiteStats={whiteOpeningStats}
-                blackStats={blackOpeningStats}
-                totalGames={stats.totalGames}
-                onChatNavigate={() => onNavigate?.('training')}
-              />
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">AS WHITE</h4>
-                  <div className="h-[320px]">
-                    <OpeningChart data={whiteOpeningStats.slice(0, 6)} type="performance" />
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">AS BLACK</h4>
-                  <div className="h-[320px]">
-                    <OpeningChart data={blackOpeningStats.slice(0, 6)} type="performance" />
-                  </div>
-                </div>
               </div>
             </SectionCard>
           </TabsContent>
