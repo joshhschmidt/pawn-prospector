@@ -1,17 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Game, FilterState, OpeningBucket } from '@/types/chess';
-import { filterGames, calculateStats } from '@/lib/analysis';
+import { filterGames } from '@/lib/analysis';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
-import { KPIGrid, KPICard } from './KPICard';
-import { Shield, Crown, Repeat, Zap, Clock, AlertTriangle } from 'lucide-react';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TrendingUp, TrendingDown, Loader2, Lightbulb } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HabitsPageProps {
   games: Game[];
@@ -19,127 +14,157 @@ interface HabitsPageProps {
   onFiltersChange: (filters: FilterState) => void;
 }
 
-interface HabitSection {
-  id: string;
+interface HabitInsight {
   title: string;
   description: string;
-  icon: React.ReactNode;
-  content: React.ReactNode;
+  frequency: string;
+}
+
+interface HabitsAnalysis {
+  winningHabits: HabitInsight[];
+  losingHabits: HabitInsight[];
 }
 
 export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps) => {
-  const [openSections, setOpenSections] = useState<string[]>(['castling']);
-  const filteredGames = filterGames(games, filters);
-  const stats = calculateStats(filteredGames);
+  const [analysis, setAnalysis] = useState<HabitsAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
+  const filteredGames = filterGames(games, filters);
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
 
-  // Calculate detailed habit metrics
-  const gamesWithCastling = filteredGames.filter(g => g.castled_at_ply !== null);
-  const earlycastlers = gamesWithCastling.filter(g => (g.castled_at_ply || 0) <= 10).length;
-  const lateCastlers = gamesWithCastling.filter(g => (g.castled_at_ply || 0) > 16).length;
-  const neverCastled = filteredGames.length - gamesWithCastling.length;
+  // Calculate game patterns for AI analysis
+  const calculatePatterns = () => {
+    const wins = filteredGames.filter(g => g.result === 'win');
+    const losses = filteredGames.filter(g => g.result === 'loss');
 
-  const gamesWithQueen = filteredGames.filter(g => g.queen_moves_first_10 !== null);
-  const noQueenMoves = gamesWithQueen.filter(g => (g.queen_moves_first_10 || 0) === 0).length;
-  const manyQueenMoves = gamesWithQueen.filter(g => (g.queen_moves_first_10 || 0) >= 3).length;
-
-  const toggleSection = (id: string) => {
-    setOpenSections(prev => 
-      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
-    );
+    return {
+      totalGames: filteredGames.length,
+      wins: wins.length,
+      losses: losses.length,
+      winPatterns: {
+        quickWins: wins.filter(g => g.is_quick_win).length,
+        earlyCastling: wins.filter(g => g.castled_at_ply && g.castled_at_ply <= 10).length,
+        lowQueenMoves: wins.filter(g => (g.queen_moves_first_10 || 0) <= 1).length,
+        avgQueenMoves: wins.length > 0 ? wins.reduce((sum, g) => sum + (g.queen_moves_first_10 || 0), 0) / wins.length : 0,
+        avgCastlingPly: wins.filter(g => g.castled_at_ply).length > 0 
+          ? wins.filter(g => g.castled_at_ply).reduce((sum, g) => sum + (g.castled_at_ply || 0), 0) / wins.filter(g => g.castled_at_ply).length 
+          : 0,
+      },
+      lossPatterns: {
+        quickLosses: losses.filter(g => g.is_quick_loss).length,
+        lateCastling: losses.filter(g => g.castled_at_ply && g.castled_at_ply > 16).length,
+        neverCastled: losses.filter(g => g.castled_at_ply === null).length,
+        nc7Forks: losses.filter(g => g.nc7_fork_detected).length,
+        highQueenMoves: losses.filter(g => (g.queen_moves_first_10 || 0) >= 3).length,
+        earlyChecks: losses.filter(g => (g.early_checks_received || 0) >= 2).length,
+        tempoLoss: losses.filter(g => g.queen_tempo_loss).length,
+        avgQueenMoves: losses.length > 0 ? losses.reduce((sum, g) => sum + (g.queen_moves_first_10 || 0), 0) / losses.length : 0,
+      },
+      openingPerformance: {
+        bestOpening: getBestOpening(wins),
+        worstOpening: getWorstOpening(losses),
+      }
+    };
   };
 
-  const habits: HabitSection[] = [
-    {
-      id: 'castling',
-      title: 'Castling Habits',
-      description: 'When and how often you castle',
-      icon: <Shield className="h-5 w-5" />,
-      content: (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Early (≤move 5)</p>
-            <p className="text-2xl font-bold text-chess-win">{earlycastlers}</p>
-            <p className="text-xs text-muted-foreground">
-              {gamesWithCastling.length > 0 
-                ? `${((earlycastlers / gamesWithCastling.length) * 100).toFixed(0)}%` 
-                : '0%'}
-            </p>
-          </div>
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Late (move 9+)</p>
-            <p className="text-2xl font-bold text-warning">{lateCastlers}</p>
-            <p className="text-xs text-muted-foreground">
-              {gamesWithCastling.length > 0 
-                ? `${((lateCastlers / gamesWithCastling.length) * 100).toFixed(0)}%` 
-                : '0%'}
-            </p>
-          </div>
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Never Castled</p>
-            <p className="text-2xl font-bold text-chess-loss">{neverCastled}</p>
-            <p className="text-xs text-muted-foreground">
-              {filteredGames.length > 0 
-                ? `${((neverCastled / filteredGames.length) * 100).toFixed(0)}%` 
-                : '0%'}
-            </p>
-          </div>
+  const getBestOpening = (wins: Game[]) => {
+    const openingCounts: Record<string, number> = {};
+    wins.forEach(g => {
+      if (g.opening_bucket) {
+        openingCounts[g.opening_bucket] = (openingCounts[g.opening_bucket] || 0) + 1;
+      }
+    });
+    const sorted = Object.entries(openingCounts).sort((a, b) => b[1] - a[1]);
+    return sorted[0]?.[0] || null;
+  };
+
+  const getWorstOpening = (losses: Game[]) => {
+    const openingCounts: Record<string, number> = {};
+    losses.forEach(g => {
+      if (g.opening_bucket) {
+        openingCounts[g.opening_bucket] = (openingCounts[g.opening_bucket] || 0) + 1;
+      }
+    });
+    const sorted = Object.entries(openingCounts).sort((a, b) => b[1] - a[1]);
+    return sorted[0]?.[0] || null;
+  };
+
+  const analyzeHabits = async () => {
+    if (filteredGames.length === 0) {
+      setError('No games to analyze');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const patterns = calculatePatterns();
+      
+      const { data, error: fnError } = await supabase.functions.invoke('analyze-habits', {
+        body: { patterns }
+      });
+
+      if (fnError) throw fnError;
+      
+      setAnalysis(data);
+    } catch (err) {
+      console.error('Error analyzing habits:', err);
+      setError('Failed to analyze habits. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (filteredGames.length > 0) {
+      analyzeHabits();
+    }
+  }, [filteredGames.length, filters]);
+
+  const HabitCard = ({ insight, index }: { insight: HabitInsight; index: number }) => (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+          {index + 1}
         </div>
-      ),
-    },
-    {
-      id: 'queen',
-      title: 'Queen Development',
-      description: 'How you use your queen in the opening',
-      icon: <Crown className="h-5 w-5" />,
-      content: (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">No Early Queen</p>
-            <p className="text-2xl font-bold text-chess-win">{noQueenMoves}</p>
-            <p className="text-xs text-muted-foreground">Good discipline</p>
-          </div>
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Avg Queen Moves (10)</p>
-            <p className="text-2xl font-bold text-foreground">{stats.avgQueenMovesFirst10.toFixed(1)}</p>
-            <p className="text-xs text-muted-foreground">First 10 moves</p>
-          </div>
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">3+ Queen Moves</p>
-            <p className="text-2xl font-bold text-chess-loss">{manyQueenMoves}</p>
-            <p className="text-xs text-muted-foreground">Too aggressive</p>
-          </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-foreground">{insight.title}</h3>
+          <p className="text-xs text-muted-foreground mt-1">{insight.frequency}</p>
         </div>
-      ),
-    },
-    {
-      id: 'tempo',
-      title: 'Tempo Management',
-      description: 'Efficiency in the opening phase',
-      icon: <Clock className="h-5 w-5" />,
-      content: (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Queen Tempo Loss</p>
-            <p className="text-2xl font-bold text-warning">{stats.queenTempoLossGames}</p>
-            <p className="text-xs text-muted-foreground">Moving queen multiple times early</p>
-          </div>
-          <div className="rounded-lg bg-background border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-1">Avg Game Length</p>
-            <p className="text-2xl font-bold text-foreground">{stats.avgGameLength}</p>
-            <p className="text-xs text-muted-foreground">moves per game</p>
-          </div>
-        </div>
-      ),
-    },
-  ];
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed pl-11">
+        {insight.description}
+      </p>
+    </div>
+  );
+
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Lightbulb className="h-12 w-12 text-muted-foreground/50 mb-4" />
+      <h3 className="font-semibold text-foreground mb-2">No Analysis Available</h3>
+      <p className="text-sm text-muted-foreground max-w-md">
+        Import more games to get AI-powered insights about your winning and losing habits.
+      </p>
+    </div>
+  );
+
+  const LoadingState = () => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+      <h3 className="font-semibold text-foreground mb-2">Analyzing Your Games</h3>
+      <p className="text-sm text-muted-foreground">
+        Finding patterns in decisive evaluation swings...
+      </p>
+    </div>
+  );
 
   return (
     <PageContainer>
       <PageHeader 
         title="Habits"
-        subtitle="Analyze your playing patterns and tendencies"
+        subtitle="AI analysis of decisive moves and evaluation swings in your games"
       />
 
       <StickyFilterBar
@@ -150,59 +175,56 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
         filteredCount={filteredGames.length}
       />
 
-      {/* Summary KPIs */}
-      <KPIGrid>
-        <KPICard
-          title="Avg Castling Move"
-          value={stats.avgCastlingPly > 0 ? `Move ${Math.round(stats.avgCastlingPly / 2)}` : 'N/A'}
-          variant={stats.avgCastlingPly <= 12 ? 'success' : stats.avgCastlingPly <= 16 ? 'warning' : 'danger'}
-          icon={<Shield className="h-5 w-5" />}
-        />
-        <KPICard
-          title="Avg Queen Moves"
-          value={stats.avgQueenMovesFirst10.toFixed(1)}
-          subtitle="In first 10 moves"
-          variant={stats.avgQueenMovesFirst10 < 1.5 ? 'success' : stats.avgQueenMovesFirst10 < 2.5 ? 'warning' : 'danger'}
-          icon={<Crown className="h-5 w-5" />}
-        />
-        <KPICard
-          title="Tempo Loss Games"
-          value={stats.queenTempoLossGames}
-          variant={stats.queenTempoLossGames > stats.totalGames * 0.2 ? 'danger' : 'default'}
-          icon={<Repeat className="h-5 w-5" />}
-        />
-      </KPIGrid>
+      <Tabs defaultValue="winning" className="mt-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="winning" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Winning Habits
+          </TabsTrigger>
+          <TabsTrigger value="losing" className="flex items-center gap-2">
+            <TrendingDown className="h-4 w-4" />
+            Losing Habits
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Collapsible Habit Sections */}
-      <div className="space-y-4 mt-6">
-        {habits.map((habit) => (
-          <Collapsible
-            key={habit.id}
-            open={openSections.includes(habit.id)}
-            onOpenChange={() => toggleSection(habit.id)}
-          >
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <CollapsibleTrigger className="w-full p-5 flex items-center justify-between hover:bg-accent/5 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="text-primary">{habit.icon}</div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-foreground">{habit.title}</h3>
-                    <p className="text-xs text-muted-foreground">{habit.description}</p>
-                  </div>
-                </div>
-                <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${
-                  openSections.includes(habit.id) ? 'rotate-180' : ''
-                }`} />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="px-5 pb-5 pt-2 border-t border-border">
-                  {habit.content}
-                </div>
-              </CollapsibleContent>
+        <TabsContent value="winning">
+          {isLoading ? (
+            <LoadingState />
+          ) : error ? (
+            <div className="text-center py-8 text-destructive">{error}</div>
+          ) : analysis?.winningHabits && analysis.winningHabits.length > 0 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Common tactics that create decisive evaluation swings in your favor
+              </p>
+              {analysis.winningHabits.map((insight, index) => (
+                <HabitCard key={index} insight={insight} index={index} />
+              ))}
             </div>
-          </Collapsible>
-        ))}
-      </div>
+          ) : (
+            <EmptyState />
+          )}
+        </TabsContent>
+
+        <TabsContent value="losing">
+          {isLoading ? (
+            <LoadingState />
+          ) : error ? (
+            <div className="text-center py-8 text-destructive">{error}</div>
+          ) : analysis?.losingHabits && analysis.losingHabits.length > 0 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Common patterns that lead to decisive evaluation swings against you
+              </p>
+              {analysis.losingHabits.map((insight, index) => (
+                <HabitCard key={index} insight={insight} index={index} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState />
+          )}
+        </TabsContent>
+      </Tabs>
     </PageContainer>
   );
 };
