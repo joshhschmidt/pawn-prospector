@@ -12,10 +12,18 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  // Workaround for stale dependency pre-bundles:
+  // react-chessboard v5+ uses React 19's `use()` hook, but this project runs React 18.
+  // Excluding it from optimizeDeps prevents Vite from serving an older cached prebundle.
+  optimizeDeps: {
+    exclude: ["react-chessboard"],
+  },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Ensure there's only one copy of React in the bundle.
+    dedupe: ["react", "react-dom"],
   },
 }));
