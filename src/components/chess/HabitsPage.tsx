@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Game, FilterState, OpeningBucket } from '@/types/chess';
+import { Game, FilterState, OpeningBucket, PlayerColor } from '@/types/chess';
 import { filterGames } from '@/lib/analysis';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -20,28 +20,46 @@ interface HabitInsight {
   frequency: string;
 }
 
-interface HabitsAnalysis {
-  winningHabits: HabitInsight[];
-  losingHabits: HabitInsight[];
-}
+type ColorFilter = 'all' | PlayerColor;
 
 export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps) => {
-  const [analysis, setAnalysis] = useState<HabitsAnalysis | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [winningColorFilter, setWinningColorFilter] = useState<ColorFilter>('all');
+  const [losingColorFilter, setLosingColorFilter] = useState<ColorFilter>('all');
+  const [winningAnalysis, setWinningAnalysis] = useState<HabitInsight[] | null>(null);
+  const [losingAnalysis, setLosingAnalysis] = useState<HabitInsight[] | null>(null);
+  const [isLoadingWinning, setIsLoadingWinning] = useState(false);
+  const [isLoadingLosing, setIsLoadingLosing] = useState(false);
+  const [winningError, setWinningError] = useState<string | null>(null);
+  const [losingError, setLosingError] = useState<string | null>(null);
   
   const filteredGames = filterGames(games, filters);
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
 
-  // Calculate game patterns for AI analysis
-  const calculatePatterns = () => {
-    const wins = filteredGames.filter(g => g.result === 'win');
-    const losses = filteredGames.filter(g => g.result === 'loss');
+  const getColorFilteredGames = (colorFilter: ColorFilter) => {
+    if (colorFilter === 'all') return filteredGames;
+    return filteredGames.filter(g => g.player_color === colorFilter);
+  };
+
+  const calculatePatterns = (gamesToAnalyze: Game[], type: 'winning' | 'losing') => {
+    const wins = gamesToAnalyze.filter(g => g.result === 'win');
+    const losses = gamesToAnalyze.filter(g => g.result === 'loss');
+
+    const getBestOpening = (gamesArr: Game[]) => {
+      const openingCounts: Record<string, number> = {};
+      gamesArr.forEach(g => {
+        if (g.opening_bucket) {
+          openingCounts[g.opening_bucket] = (openingCounts[g.opening_bucket] || 0) + 1;
+        }
+      });
+      const sorted = Object.entries(openingCounts).sort((a, b) => b[1] - a[1]);
+      return sorted[0]?.[0] || null;
+    };
 
     return {
-      totalGames: filteredGames.length,
+      totalGames: gamesToAnalyze.length,
       wins: wins.length,
       losses: losses.length,
+      type,
       winPatterns: {
         quickWins: wins.filter(g => g.is_quick_win).length,
         earlyCastling: wins.filter(g => g.castled_at_ply && g.castled_at_ply <= 10).length,
@@ -63,44 +81,24 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
       },
       openingPerformance: {
         bestOpening: getBestOpening(wins),
-        worstOpening: getWorstOpening(losses),
+        worstOpening: getBestOpening(losses),
       }
     };
   };
 
-  const getBestOpening = (wins: Game[]) => {
-    const openingCounts: Record<string, number> = {};
-    wins.forEach(g => {
-      if (g.opening_bucket) {
-        openingCounts[g.opening_bucket] = (openingCounts[g.opening_bucket] || 0) + 1;
-      }
-    });
-    const sorted = Object.entries(openingCounts).sort((a, b) => b[1] - a[1]);
-    return sorted[0]?.[0] || null;
-  };
-
-  const getWorstOpening = (losses: Game[]) => {
-    const openingCounts: Record<string, number> = {};
-    losses.forEach(g => {
-      if (g.opening_bucket) {
-        openingCounts[g.opening_bucket] = (openingCounts[g.opening_bucket] || 0) + 1;
-      }
-    });
-    const sorted = Object.entries(openingCounts).sort((a, b) => b[1] - a[1]);
-    return sorted[0]?.[0] || null;
-  };
-
-  const analyzeHabits = async () => {
-    if (filteredGames.length === 0) {
-      setError('No games to analyze');
+  const analyzeWinningHabits = async () => {
+    const gamesToAnalyze = getColorFilteredGames(winningColorFilter);
+    if (gamesToAnalyze.length === 0) {
+      setWinningError('No games to analyze');
+      setWinningAnalysis(null);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    setIsLoadingWinning(true);
+    setWinningError(null);
 
     try {
-      const patterns = calculatePatterns();
+      const patterns = calculatePatterns(gamesToAnalyze, 'winning');
       
       const { data, error: fnError } = await supabase.functions.invoke('analyze-habits', {
         body: { patterns }
@@ -108,20 +106,55 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
 
       if (fnError) throw fnError;
       
-      setAnalysis(data);
+      setWinningAnalysis(data?.winningHabits || []);
     } catch (err) {
-      console.error('Error analyzing habits:', err);
-      setError('Failed to analyze habits. Please try again.');
+      console.error('Error analyzing winning habits:', err);
+      setWinningError('Failed to analyze habits. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsLoadingWinning(false);
+    }
+  };
+
+  const analyzeLosingHabits = async () => {
+    const gamesToAnalyze = getColorFilteredGames(losingColorFilter);
+    if (gamesToAnalyze.length === 0) {
+      setLosingError('No games to analyze');
+      setLosingAnalysis(null);
+      return;
+    }
+
+    setIsLoadingLosing(true);
+    setLosingError(null);
+
+    try {
+      const patterns = calculatePatterns(gamesToAnalyze, 'losing');
+      
+      const { data, error: fnError } = await supabase.functions.invoke('analyze-habits', {
+        body: { patterns }
+      });
+
+      if (fnError) throw fnError;
+      
+      setLosingAnalysis(data?.losingHabits || []);
+    } catch (err) {
+      console.error('Error analyzing losing habits:', err);
+      setLosingError('Failed to analyze habits. Please try again.');
+    } finally {
+      setIsLoadingLosing(false);
     }
   };
 
   useEffect(() => {
     if (filteredGames.length > 0) {
-      analyzeHabits();
+      analyzeWinningHabits();
     }
-  }, [filteredGames.length, filters]);
+  }, [filteredGames.length, filters, winningColorFilter]);
+
+  useEffect(() => {
+    if (filteredGames.length > 0) {
+      analyzeLosingHabits();
+    }
+  }, [filteredGames.length, filters, losingColorFilter]);
 
   const HabitCard = ({ insight, index }: { insight: HabitInsight; index: number }) => (
     <div className="rounded-xl border border-border bg-card p-5 space-y-3">
@@ -160,6 +193,47 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
     </div>
   );
 
+  const ColorSubTabs = ({ 
+    value, 
+    onChange 
+  }: { 
+    value: ColorFilter; 
+    onChange: (val: ColorFilter) => void;
+  }) => (
+    <div className="flex gap-2 mb-4">
+      <button
+        onClick={() => onChange('all')}
+        className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+          value === 'all' 
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+        }`}
+      >
+        All Games
+      </button>
+      <button
+        onClick={() => onChange('white')}
+        className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+          value === 'white' 
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+        }`}
+      >
+        As White
+      </button>
+      <button
+        onClick={() => onChange('black')}
+        className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+          value === 'black' 
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+        }`}
+      >
+        As Black
+      </button>
+    </div>
+  );
+
   return (
     <PageContainer>
       <PageHeader 
@@ -188,16 +262,18 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
         </TabsList>
 
         <TabsContent value="winning">
-          {isLoading ? (
+          <ColorSubTabs value={winningColorFilter} onChange={setWinningColorFilter} />
+          
+          {isLoadingWinning ? (
             <LoadingState />
-          ) : error ? (
-            <div className="text-center py-8 text-destructive">{error}</div>
-          ) : analysis?.winningHabits && analysis.winningHabits.length > 0 ? (
+          ) : winningError ? (
+            <div className="text-center py-8 text-destructive">{winningError}</div>
+          ) : winningAnalysis && winningAnalysis.length > 0 ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Common tactics that create decisive evaluation swings in your favor
               </p>
-              {analysis.winningHabits.map((insight, index) => (
+              {winningAnalysis.map((insight, index) => (
                 <HabitCard key={index} insight={insight} index={index} />
               ))}
             </div>
@@ -207,16 +283,18 @@ export const HabitsPage = ({ games, filters, onFiltersChange }: HabitsPageProps)
         </TabsContent>
 
         <TabsContent value="losing">
-          {isLoading ? (
+          <ColorSubTabs value={losingColorFilter} onChange={setLosingColorFilter} />
+          
+          {isLoadingLosing ? (
             <LoadingState />
-          ) : error ? (
-            <div className="text-center py-8 text-destructive">{error}</div>
-          ) : analysis?.losingHabits && analysis.losingHabits.length > 0 ? (
+          ) : losingError ? (
+            <div className="text-center py-8 text-destructive">{losingError}</div>
+          ) : losingAnalysis && losingAnalysis.length > 0 ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Common patterns that lead to decisive evaluation swings against you
               </p>
-              {analysis.losingHabits.map((insight, index) => (
+              {losingAnalysis.map((insight, index) => (
                 <HabitCard key={index} insight={insight} index={index} />
               ))}
             </div>
