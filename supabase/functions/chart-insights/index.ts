@@ -47,7 +47,7 @@ serve(async (req) => {
       
       dataContext = `Opening Frequency Data (${totalGames} total games):\n${topOpenings}`;
       promptFocus = detail === "brief" 
-        ? `Give a 2-sentence summary of this player's opening repertoire. Focus on the most important insight.`
+        ? `Give a very concise 1-2 sentence summary (max 200 characters) of this player's opening repertoire. Focus on the single most important insight.`
         : `Provide a detailed analysis of this player's opening repertoire diversity:
 - Are they too concentrated on few openings or well-diversified?
 - Which openings might they be avoiding that could benefit them?
@@ -65,7 +65,7 @@ serve(async (req) => {
       
       dataContext = `Opening Success Rates:\n\nBest performing:\n${best}\n\nLowest performing:\n${worst}`;
       promptFocus = detail === "brief"
-        ? `Give a 2-sentence summary of this player's opening performance. Highlight the key strength or weakness.`
+        ? `Give a very concise 1-2 sentence summary (max 200 characters) of this player's opening performance. Highlight the key strength or weakness.`
         : `Provide a detailed analysis of this player's opening performance patterns:
 - What do their best openings have in common?
 - Why might they be struggling with certain openings?
@@ -82,7 +82,7 @@ serve(async (req) => {
       
       dataContext = `Performance by Color:\n\nAs White:\n${whiteTop}\n\nAs Black:\n${blackTop}`;
       promptFocus = detail === "brief"
-        ? `Give a 2-sentence summary comparing this player's White vs Black performance. Note the most significant difference.`
+        ? `Give a very concise 1-2 sentence summary (max 200 characters) comparing this player's White vs Black performance. Note the most significant difference.`
         : `Provide a detailed comparison of this player's performance as White vs Black:
 - Do they perform better with one color? Why might that be?
 - Are their opening choices appropriate for each color?
@@ -91,7 +91,7 @@ serve(async (req) => {
     }
 
     const systemPrompt = detail === "brief" 
-      ? `You are an expert chess coach. Analyze the data and provide exactly 2 sentences - one key observation and one brief recommendation. Be direct and specific.
+      ? `You are an expert chess coach. Provide a very brief insight in 1-2 sentences, maximum 200 characters total. Be direct and specific. No fluff.
 
 ${dataContext}
 
