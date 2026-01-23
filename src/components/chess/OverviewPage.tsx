@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Trophy, Target, Clock, Shield, Crown, Percent } from 'lucide-react';
 import { Game, FilterState, OpeningBucket } from '@/types/chess';
 import { filterGames, calculateStats, calculateOpeningStats } from '@/lib/analysis';
@@ -19,7 +19,13 @@ interface OverviewPageProps {
   onNavigate?: (view: string) => void;
 }
 
+type ColorFilter = 'all' | 'white' | 'black';
+
 export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: OverviewPageProps) => {
+  const [frequencyColor, setFrequencyColor] = useState<ColorFilter>('all');
+  const [successColor, setSuccessColor] = useState<ColorFilter>('all');
+  const [tableColor, setTableColor] = useState<ColorFilter>('all');
+
   const filteredGames = filterGames(games, filters);
   const stats = calculateStats(filteredGames);
   const openingStats = useMemo(() => calculateOpeningStats(filteredGames), [filteredGames]);
@@ -40,6 +46,56 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
   const queenBeforeCastlePercent = gamesWithData.length > 0 
     ? (queenBeforeCastle / gamesWithData.length) * 100 
     : 0;
+
+  // Helper to get stats based on color filter
+  const getStatsForColor = (color: ColorFilter) => {
+    switch (color) {
+      case 'white': return whiteOpeningStats;
+      case 'black': return blackOpeningStats;
+      default: return openingStats;
+    }
+  };
+
+  const ColorSubTabs = ({ 
+    value, 
+    onChange 
+  }: { 
+    value: ColorFilter; 
+    onChange: (v: ColorFilter) => void;
+  }) => (
+    <div className="flex gap-1 mb-4">
+      <button
+        onClick={() => onChange('all')}
+        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+          value === 'all' 
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-muted text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        All Games
+      </button>
+      <button
+        onClick={() => onChange('white')}
+        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+          value === 'white' 
+            ? 'bg-white text-black border border-border' 
+            : 'bg-muted text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        As White
+      </button>
+      <button
+        onClick={() => onChange('black')}
+        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+          value === 'black' 
+            ? 'bg-zinc-800 text-white' 
+            : 'bg-muted text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        As Black
+      </button>
+    </div>
+  );
 
   return (
     <PageContainer>
@@ -107,28 +163,30 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
 
           <TabsContent value="frequency" className="mt-0">
             <SectionCard title="Opening Frequency" description="Your most played openings">
+              <ColorSubTabs value={frequencyColor} onChange={setFrequencyColor} />
               <ChartInsights
                 chartType="frequency"
-                openingStats={openingStats}
+                openingStats={getStatsForColor(frequencyColor)}
                 totalGames={stats.totalGames}
                 onChatNavigate={() => onNavigate?.('training')}
               />
               <div className="h-[400px]">
-                <OpeningChart data={openingStats.slice(0, 10)} type="frequency" />
+                <OpeningChart data={getStatsForColor(frequencyColor).slice(0, 10)} type="frequency" />
               </div>
             </SectionCard>
           </TabsContent>
 
           <TabsContent value="success" className="mt-0">
             <SectionCard title="Opening Win Rate" description="Win % by opening (excluding draws)">
+              <ColorSubTabs value={successColor} onChange={setSuccessColor} />
               <ChartInsights
                 chartType="success"
-                openingStats={openingStats}
+                openingStats={getStatsForColor(successColor)}
                 totalGames={stats.totalGames}
                 onChatNavigate={() => onNavigate?.('training')}
               />
               <div className="h-[400px]">
-                <OpeningChart data={openingStats.slice(0, 10)} type="performance" />
+                <OpeningChart data={getStatsForColor(successColor).slice(0, 10)} type="performance" />
               </div>
             </SectionCard>
           </TabsContent>
@@ -145,13 +203,13 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
               />
               <div className="grid gap-6 lg:grid-cols-2">
                 <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS WHITE</h4>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">AS WHITE</h4>
                   <div className="h-[320px]">
                     <OpeningChart data={whiteOpeningStats.slice(0, 6)} type="performance" />
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">AS BLACK</h4>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">AS BLACK</h4>
                   <div className="h-[320px]">
                     <OpeningChart data={blackOpeningStats.slice(0, 6)} type="performance" />
                   </div>
@@ -162,7 +220,8 @@ export const OverviewPage = ({ games, filters, onFiltersChange, onNavigate }: Ov
 
           <TabsContent value="table" className="mt-0">
             <SectionCard title="All Openings" description="Full breakdown of your opening buckets">
-              <OpeningTable data={openingStats} />
+              <ColorSubTabs value={tableColor} onChange={setTableColor} />
+              <OpeningTable data={getStatsForColor(tableColor)} />
             </SectionCard>
           </TabsContent>
         </Tabs>

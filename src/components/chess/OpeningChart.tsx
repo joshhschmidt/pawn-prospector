@@ -7,7 +7,15 @@ interface OpeningChartProps {
 }
 
 export const OpeningChart = ({ data, type }: OpeningChartProps) => {
-  const chartData = data.map(item => ({
+  // Sort data from greatest to least based on chart type
+  const sortedData = [...data].sort((a, b) => {
+    if (type === 'frequency') {
+      return b.games - a.games;
+    }
+    return b.winPercent - a.winPercent;
+  });
+
+  const chartData = sortedData.map(item => ({
     name: OPENING_LABELS[item.bucket],
     shortName: OPENING_LABELS[item.bucket].split(' ')[0],
     value: type === 'frequency' ? item.games : item.winPercent,
