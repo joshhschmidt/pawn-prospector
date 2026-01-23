@@ -8,7 +8,8 @@ import {
   FileDown,
   ArrowLeft,
   ChevronDown,
-  MessageCircle
+  MessageCircle,
+  TrendingUp
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -47,6 +48,7 @@ const mainNavItems = [
 
 const analysisNavItems = [
   { id: 'overview', title: 'Overview', icon: BarChart3 },
+  { id: 'recent-progress', title: 'Recent Progress', icon: TrendingUp },
   { id: 'habits', title: 'Habits', icon: Brain },
   { id: 'training', title: 'Opening Training', icon: Target },
   { id: 'coaching', title: 'Coaching Conversations', icon: MessageCircle },
