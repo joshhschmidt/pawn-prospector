@@ -5,9 +5,10 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RotateCcw, ChevronRight, CheckCircle, XCircle, Lightbulb, BookOpen, ArrowLeft } from 'lucide-react';
+import { Loader2, RotateCcw, ChevronDown, CheckCircle, XCircle, Lightbulb, Trophy, ArrowLeft, Play } from 'lucide-react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
@@ -17,45 +18,67 @@ interface OpeningTrainingPageProps {
   onFiltersChange: (filters: FilterState) => void;
 }
 
-interface OpeningRecommendation {
+interface PracticeLine {
   name: string;
-  reason: string;
-  mainLine: string[];
-  keyIdeas: string[];
+  moves: string[];
+  keyIdea: string;
+}
+
+interface OpeningWithLines {
+  bucket: string;
+  name: string;
+  lines: PracticeLine[];
+  winRate: number;
+  games: number;
+}
+
+interface SelectedLine {
+  opening: OpeningWithLines;
+  line: PracticeLine;
   color: 'white' | 'black';
-  difficulty: string;
 }
 
 export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: OpeningTrainingPageProps) => {
-  const [recommendations, setRecommendations] = useState<OpeningRecommendation[]>([]);
+  const [openingsWithLines, setOpeningsWithLines] = useState<OpeningWithLines[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOpening, setSelectedOpening] = useState<OpeningRecommendation | null>(null);
   const [colorFilter, setColorFilter] = useState<'white' | 'black'>('white');
-  const [isPracticing, setIsPracticing] = useState(false);
+  const [expandedOpenings, setExpandedOpenings] = useState<string[]>([]);
   
-  // Chess game state
+  // Practice mode state
+  const [selectedLine, setSelectedLine] = useState<SelectedLine | null>(null);
   const [game, setGame] = useState(new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
-  const [playerMoveIndex, setPlayerMoveIndex] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [practiceComplete, setPracticeComplete] = useState(false);
 
   const filteredGames = filterGames(games, filters);
-  const openingStats = useMemo(() => {
-    const stats = calculateOpeningStats(filteredGames);
-    return stats.map(s => ({
-      ...s,
-      label: OPENING_LABELS[s.bucket] || s.bucket.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-    }));
-  }, [filteredGames]);
   
+  // Calculate top 3 winning openings for the selected color
+  const topWinningOpenings = useMemo(() => {
+    const colorGames = filteredGames.filter(g => g.player_color === colorFilter);
+    const stats = calculateOpeningStats(colorGames);
+    
+    // Calculate win rate and sort by it
+    const withWinRate = stats
+      .filter(s => s.games >= 3) // Minimum 3 games for meaningful stats
+      .map(s => ({
+        ...s,
+        label: OPENING_LABELS[s.bucket] || s.bucket.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        winRate: s.wins + s.losses > 0 ? (s.wins / (s.wins + s.losses)) * 100 : 0
+      }))
+      .sort((a, b) => b.winRate - a.winRate)
+      .slice(0, 3);
+    
+    return withWinRate;
+  }, [filteredGames, colorFilter]);
+
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
 
-  const fetchRecommendations = async () => {
-    if (openingStats.length === 0) {
-      setError('No opening data available');
+  const fetchOpeningLines = async () => {
+    if (topWinningOpenings.length === 0) {
+      setOpeningsWithLines([]);
       return;
     }
 
@@ -64,95 +87,106 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('opening-trainer', {
-        body: { openingStats, playerColor: colorFilter }
+        body: { 
+          topOpenings: topWinningOpenings,
+          playerColor: colorFilter 
+        }
       });
 
       if (fnError) throw fnError;
       
-      setRecommendations(data?.recommendations || []);
-      if (data?.recommendations?.length > 0) {
-        setSelectedOpening(data.recommendations[0]);
+      // Merge AI-generated lines with our stats
+      const openings: OpeningWithLines[] = (data?.openings || []).map((o: any, index: number) => ({
+        ...o,
+        winRate: topWinningOpenings[index]?.winRate || 0,
+        games: topWinningOpenings[index]?.games || 0
+      }));
+      
+      setOpeningsWithLines(openings);
+      // Auto-expand the first opening
+      if (openings.length > 0) {
+        setExpandedOpenings([openings[0].bucket]);
       }
     } catch (err) {
-      console.error('Error fetching recommendations:', err);
-      setError('Failed to get recommendations. Please try again.');
+      console.error('Error fetching opening lines:', err);
+      setError('Failed to get opening lines. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (openingStats.length > 0) {
-      fetchRecommendations();
+    if (topWinningOpenings.length > 0) {
+      fetchOpeningLines();
+    } else {
+      setOpeningsWithLines([]);
     }
-  }, [colorFilter]);
+  }, [colorFilter, JSON.stringify(topWinningOpenings.map(o => o.bucket))]);
 
-  // Reset board when opening changes
-  useEffect(() => {
-    if (selectedOpening && isPracticing) {
-      resetPractice();
-    }
-  }, [selectedOpening, isPracticing]);
+  const toggleOpening = (bucket: string) => {
+    setExpandedOpenings(prev => 
+      prev.includes(bucket) 
+        ? prev.filter(b => b !== bucket)
+        : [...prev, bucket]
+    );
+  };
 
   const resetPractice = useCallback(() => {
     setGame(new Chess());
     setCurrentMoveIndex(0);
-    setPlayerMoveIndex(0);
     setFeedback(null);
     setShowHint(false);
     setPracticeComplete(false);
   }, []);
 
-  const handleSelectOpening = (opening: OpeningRecommendation) => {
-    setSelectedOpening(opening);
-    setIsPracticing(true);
+  const handleSelectLine = (opening: OpeningWithLines, line: PracticeLine) => {
+    setSelectedLine({ opening, line, color: colorFilter });
+    resetPractice();
   };
 
   const handleBackToList = () => {
-    setIsPracticing(false);
-    setSelectedOpening(null);
+    setSelectedLine(null);
   };
 
-  // Determine if it's player's turn based on the opening color
   const isPlayerTurn = useCallback(() => {
-    if (!selectedOpening) return false;
+    if (!selectedLine) return false;
     const isWhiteTurn = game.turn() === 'w';
-    return (selectedOpening.color === 'white' && isWhiteTurn) || 
-           (selectedOpening.color === 'black' && !isWhiteTurn);
-  }, [game, selectedOpening]);
+    return (selectedLine.color === 'white' && isWhiteTurn) || 
+           (selectedLine.color === 'black' && !isWhiteTurn);
+  }, [game, selectedLine]);
 
   // Make opponent's move automatically
   useEffect(() => {
-    if (!selectedOpening || practiceComplete) return;
+    if (!selectedLine || practiceComplete) return;
     
-    const mainLine = selectedOpening.mainLine;
-    if (currentMoveIndex >= mainLine.length) {
+    const moves = selectedLine.line.moves;
+    if (currentMoveIndex >= moves.length) {
       setPracticeComplete(true);
       return;
     }
 
-    if (!isPlayerTurn() && currentMoveIndex < mainLine.length) {
+    if (!isPlayerTurn() && currentMoveIndex < moves.length) {
       const timer = setTimeout(() => {
         try {
           const newGame = new Chess(game.fen());
-          newGame.move(mainLine[currentMoveIndex]);
+          newGame.move(moves[currentMoveIndex]);
           setGame(newGame);
           setCurrentMoveIndex(prev => prev + 1);
         } catch (e) {
-          console.error('Invalid opponent move:', mainLine[currentMoveIndex]);
+          console.error('Invalid opponent move:', moves[currentMoveIndex]);
         }
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [currentMoveIndex, game, selectedOpening, isPlayerTurn, practiceComplete]);
+  }, [currentMoveIndex, game, selectedLine, isPlayerTurn, practiceComplete]);
 
   const onDrop = useCallback((sourceSquare: string, targetSquare: string) => {
-    if (!selectedOpening || !isPlayerTurn() || practiceComplete) return false;
+    if (!selectedLine || !isPlayerTurn() || practiceComplete) return false;
     
-    const mainLine = selectedOpening.mainLine;
-    if (currentMoveIndex >= mainLine.length) return false;
+    const moves = selectedLine.line.moves;
+    if (currentMoveIndex >= moves.length) return false;
 
-    const expectedMove = mainLine[currentMoveIndex];
+    const expectedMove = moves[currentMoveIndex];
     
     try {
       const newGame = new Chess(game.fen());
@@ -164,13 +198,11 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
 
       if (!move) return false;
 
-      // Check if move matches expected
       const moveNotation = move.san;
       if (moveNotation === expectedMove || 
           moveNotation.replace('+', '').replace('#', '') === expectedMove.replace('+', '').replace('#', '')) {
         setGame(newGame);
         setCurrentMoveIndex(prev => prev + 1);
-        setPlayerMoveIndex(prev => prev + 1);
         setFeedback('correct');
         setShowHint(false);
         setTimeout(() => setFeedback(null), 1000);
@@ -183,15 +215,15 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
     } catch (e) {
       return false;
     }
-  }, [game, selectedOpening, currentMoveIndex, isPlayerTurn, practiceComplete]);
+  }, [game, selectedLine, currentMoveIndex, isPlayerTurn, practiceComplete]);
 
-  const boardOrientation = selectedOpening?.color === 'black' ? 'black' : 'white';
+  const boardOrientation = selectedLine?.color === 'black' ? 'black' : 'white';
 
   return (
     <PageContainer>
       <PageHeader 
         title="Opening Training"
-        subtitle="Practice AI-recommended opening lines based on your games"
+        subtitle="Practice your top winning openings with multiple lines"
       />
 
       <StickyFilterBar
@@ -215,192 +247,214 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-          <h3 className="font-semibold text-foreground mb-2">Analyzing Your Openings</h3>
-          <p className="text-sm text-muted-foreground">Finding the best lines for you to practice...</p>
+          <h3 className="font-semibold text-foreground mb-2">Generating Practice Lines</h3>
+          <p className="text-sm text-muted-foreground">Finding variations for your best openings...</p>
         </div>
       ) : error ? (
         <div className="text-center py-12 text-destructive">{error}</div>
-      ) : isPracticing && selectedOpening ? (
-          /* Practice View - Large Chessboard */
-          <div className="mt-4 space-y-4">
-            <Button variant="ghost" onClick={handleBackToList} className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Openings
-            </Button>
+      ) : selectedLine ? (
+        /* Practice View - Large Chessboard */
+        <div className="mt-4 space-y-4">
+          <Button variant="ghost" onClick={handleBackToList} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Openings
+          </Button>
 
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Chessboard - Takes 2/3 of the screen */}
-              <div className="lg:col-span-2 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground text-lg">{selectedOpening.name}</h3>
-                  <Button variant="outline" size="sm" onClick={resetPractice} className="gap-1">
-                    <RotateCcw className="h-4 w-4" />
-                    Reset
-                  </Button>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Chessboard - Takes 2/3 of the screen */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-foreground text-lg">{selectedLine.opening.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedLine.line.name}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={resetPractice} className="gap-1">
+                  <RotateCcw className="h-4 w-4" />
+                  Reset
+                </Button>
+              </div>
+
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="aspect-square max-w-2xl mx-auto">
+                  <Chessboard
+                    id="opening-trainer"
+                    position={game.fen()}
+                    onPieceDrop={(sourceSquare, targetSquare) => {
+                      if (!targetSquare) return false;
+                      return onDrop(sourceSquare, targetSquare);
+                    }}
+                    boardOrientation={boardOrientation}
+                    customBoardStyle={{
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)'
+                    }}
+                    customDarkSquareStyle={{ backgroundColor: 'hsl(217, 91%, 35%)' }}
+                    customLightSquareStyle={{ backgroundColor: 'hsl(0, 0%, 85%)' }}
+                  />
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <div className="aspect-square max-w-2xl mx-auto">
-                    <Chessboard
-                      id="opening-trainer"
-                      position={game.fen()}
-                      onPieceDrop={(sourceSquare, targetSquare) => {
-                        if (!targetSquare) return false;
-                        return onDrop(sourceSquare, targetSquare);
-                      }}
-                      boardOrientation={boardOrientation}
-                      customBoardStyle={{
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)'
-                      }}
-                      customDarkSquareStyle={{ backgroundColor: 'hsl(217, 91%, 35%)' }}
-                      customLightSquareStyle={{ backgroundColor: 'hsl(0, 0%, 85%)' }}
-                    />
-                  </div>
-
-                  {/* Feedback */}
-                  <div className="mt-4 text-center">
-                    {feedback === 'correct' && (
-                      <div className="flex items-center justify-center gap-2 text-green-500">
-                        <CheckCircle className="h-5 w-5" />
-                        <span className="font-medium">Correct!</span>
-                      </div>
-                    )}
-                    {feedback === 'incorrect' && (
-                      <div className="flex items-center justify-center gap-2 text-destructive">
-                        <XCircle className="h-5 w-5" />
-                        <span className="font-medium">Try again</span>
-                      </div>
-                    )}
-                    {practiceComplete && (
-                      <div className="flex items-center justify-center gap-2 text-primary">
-                        <CheckCircle className="h-5 w-5" />
-                        <span className="font-medium">Line complete! Great job!</span>
-                      </div>
-                    )}
-                    {!feedback && !practiceComplete && isPlayerTurn() && (
-                      <p className="text-sm text-muted-foreground">Your turn - play the next move</p>
-                    )}
-                    {!feedback && !practiceComplete && !isPlayerTurn() && currentMoveIndex < (selectedOpening?.mainLine.length || 0) && (
-                      <p className="text-sm text-muted-foreground">Opponent is thinking...</p>
-                    )}
-                  </div>
-
-                  {/* Hint */}
-                  <div className="mt-4 flex justify-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowHint(!showHint)}
-                      disabled={!isPlayerTurn() || practiceComplete}
-                    >
-                      <Lightbulb className="h-4 w-4 mr-1" />
-                      {showHint ? 'Hide Hint' : 'Show Hint'}
-                    </Button>
-                  </div>
-                  
-                  {showHint && selectedOpening && currentMoveIndex < selectedOpening.mainLine.length && (
-                    <div className="mt-2 text-center">
-                      <p className="text-sm text-primary font-mono">
-                        Next move: {selectedOpening.mainLine[currentMoveIndex]}
-                      </p>
+                {/* Feedback */}
+                <div className="mt-4 text-center">
+                  {feedback === 'correct' && (
+                    <div className="flex items-center justify-center gap-2 text-green-500">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-medium">Correct!</span>
                     </div>
                   )}
+                  {feedback === 'incorrect' && (
+                    <div className="flex items-center justify-center gap-2 text-destructive">
+                      <XCircle className="h-5 w-5" />
+                      <span className="font-medium">Try again</span>
+                    </div>
+                  )}
+                  {practiceComplete && (
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-medium">Line complete! Great job!</span>
+                    </div>
+                  )}
+                  {!feedback && !practiceComplete && isPlayerTurn() && (
+                    <p className="text-sm text-muted-foreground">Your turn - play the next move</p>
+                  )}
+                  {!feedback && !practiceComplete && !isPlayerTurn() && currentMoveIndex < selectedLine.line.moves.length && (
+                    <p className="text-sm text-muted-foreground">Opponent is thinking...</p>
+                  )}
+                </div>
 
-                  {/* Progress */}
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                      <span>Progress</span>
-                      <span>{currentMoveIndex} / {selectedOpening.mainLine.length} moves</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary transition-all duration-300"
-                        style={{ width: `${(currentMoveIndex / selectedOpening.mainLine.length) * 100}%` }}
-                      />
-                    </div>
+                {/* Hint */}
+                <div className="mt-4 flex justify-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHint(!showHint)}
+                    disabled={!isPlayerTurn() || practiceComplete}
+                  >
+                    <Lightbulb className="h-4 w-4 mr-1" />
+                    {showHint ? 'Hide Hint' : 'Show Hint'}
+                  </Button>
+                </div>
+                
+                {showHint && currentMoveIndex < selectedLine.line.moves.length && (
+                  <div className="mt-2 text-center">
+                    <p className="text-sm text-primary font-mono">
+                      Next move: {selectedLine.line.moves[currentMoveIndex]}
+                    </p>
+                  </div>
+                )}
+
+                {/* Progress */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                    <span>Progress</span>
+                    <span>{currentMoveIndex} / {selectedLine.line.moves.length} moves</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${(currentMoveIndex / selectedLine.line.moves.length) * 100}%` }}
+                    />
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Opening Details Sidebar */}
-              <div className="space-y-4">
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-sm text-muted-foreground mb-4">{selectedOpening.reason}</p>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Main Line</p>
-                      <p className="text-sm font-mono text-foreground">
-                        {selectedOpening.mainLine.map((move, i) => (
-                          <span key={i} className={i < currentMoveIndex ? 'text-primary' : ''}>
-                            {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}. </span>}
-                            {move}{' '}
-                          </span>
-                        ))}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Key Ideas</p>
-                      <ul className="text-sm text-foreground space-y-1">
-                        {selectedOpening.keyIdeas.map((idea, i) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <span className="text-primary">•</span>
-                            {idea}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+            {/* Opening Details Sidebar */}
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-sm font-medium text-foreground mb-2">Key Idea</p>
+                <p className="text-sm text-muted-foreground">{selectedLine.line.keyIdea}</p>
+                
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Full Line</p>
+                  <p className="text-sm font-mono text-foreground">
+                    {selectedLine.line.moves.map((move, i) => (
+                      <span key={i} className={i < currentMoveIndex ? 'text-primary' : ''}>
+                        {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}. </span>}
+                        {move}{' '}
+                      </span>
+                    ))}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        ) : (
-          /* List View - Full Width Recommendations */
-          <div className="mt-4 space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Recommended Openings
-            </h3>
-            
-            <div className="space-y-4">
-              {recommendations.map((rec, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSelectOpening(rec)}
-                  className="w-full text-left rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+        </div>
+      ) : (
+        /* List View - Collapsible Opening Cards */
+        <div className="mt-4 space-y-4">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            Your Top Winning Openings
+          </h3>
+          
+          {openingsWithLines.length === 0 && !isLoading ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Lightbulb className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p>Import more games to see your top winning openings.</p>
+              <p className="text-sm mt-1">You need at least 3 games with an opening to see it here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {openingsWithLines.map((opening, index) => (
+                <Collapsible
+                  key={opening.bucket}
+                  open={expandedOpenings.includes(opening.bucket)}
+                  onOpenChange={() => toggleOpening(opening.bucket)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{rec.name}</h4>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{rec.reason}</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                          {index + 1}
+                        </div>
+                        <div className="text-left">
+                          <h4 className="font-semibold text-foreground">{opening.name}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {opening.winRate.toFixed(0)}% win rate • {opening.games} games
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${
+                        expandedOpenings.includes(opening.bucket) ? 'rotate-180' : ''
+                      }`} />
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <div className="border-t border-border p-4 space-y-3">
+                        {opening.lines.map((line, lineIndex) => (
+                          <button
+                            key={lineIndex}
+                            onClick={() => handleSelectLine(opening, line)}
+                            className="w-full text-left p-3 rounded-lg border border-border bg-background hover:border-primary/50 hover:bg-muted/30 transition-all group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-foreground text-sm">{line.name}</h5>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{line.keyIdea}</p>
+                              </div>
+                              <div className="flex items-center gap-2 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Play className="h-4 w-4" />
+                                <span className="text-sm font-medium">Practice</span>
+                              </div>
+                            </div>
+                            <p className="text-xs font-mono text-muted-foreground mt-2 truncate">
+                              {line.moves.slice(0, 6).map((move, i) => (
+                                <span key={i}>
+                                  {i % 2 === 0 && `${Math.floor(i/2) + 1}.`}
+                                  {move}{' '}
+                                </span>
+                              ))}
+                              {line.moves.length > 6 && '...'}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
                   </div>
-                  
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Main Line</p>
-                    <p className="text-xs font-mono text-foreground truncate">
-                      {rec.mainLine.slice(0, 6).map((move, i) => (
-                        <span key={i}>
-                          {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}.</span>}
-                          {move}{' '}
-                        </span>
-                      ))}
-                      {rec.mainLine.length > 6 && '...'}
-                    </p>
-                  </div>
-                </button>
+                </Collapsible>
               ))}
             </div>
-
-            {recommendations.length === 0 && !isLoading && (
-              <div className="text-center py-12 text-muted-foreground">
-                <Lightbulb className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>Import more games to get personalized opening recommendations.</p>
-              </div>
-            )}
+          )}
         </div>
       )}
     </PageContainer>
