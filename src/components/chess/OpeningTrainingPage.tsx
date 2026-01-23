@@ -244,15 +244,38 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
     setSelectedSquare(null);
   }, [selectedLine, selectedSquare, isPlayerTurn, practiceComplete, game, onDrop]);
 
-  // Custom square styles for selected piece
+  // Custom square styles for selected piece and legal move indicators
   const customSquareStyles = useMemo(() => {
     if (!selectedSquare) return {};
-    return {
+    
+    const styles: Record<string, React.CSSProperties> = {
       [selectedSquare]: {
         backgroundColor: 'rgba(255, 255, 0, 0.4)',
       }
     };
-  }, [selectedSquare]);
+
+    // Get legal moves for the selected piece
+    const legalMoves = game.moves({ square: selectedSquare as any, verbose: true });
+    
+    legalMoves.forEach(move => {
+      const targetSquare = move.to;
+      const isCapture = game.get(targetSquare as any);
+      
+      if (isCapture) {
+        // For captures, show a ring around the piece
+        styles[targetSquare] = {
+          background: 'radial-gradient(transparent 0%, transparent 60%, rgba(0, 0, 0, 0.2) 60%, rgba(0, 0, 0, 0.2) 100%)',
+        };
+      } else {
+        // For empty squares, show a dot in the center
+        styles[targetSquare] = {
+          background: 'radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 25%, transparent 25%)',
+        };
+      }
+    });
+
+    return styles;
+  }, [selectedSquare, game]);
 
   const boardOrientation = selectedLine?.color === 'black' ? 'black' : 'white';
 
