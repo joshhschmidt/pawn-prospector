@@ -42,23 +42,26 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
 
-  // Get the most recent N games sorted by date
+  // First filter by color, then get the most recent N games from that subset
   const recentGames = useMemo(() => {
-    const sortedGames = [...games].sort((a, b) => {
+    // Filter by color first
+    const colorGames = colorFilter === 'all' 
+      ? games 
+      : games.filter(g => g.player_color === colorFilter);
+    
+    // Sort by date (most recent first)
+    const sortedGames = [...colorGames].sort((a, b) => {
       const dateA = a.game_date ? new Date(a.game_date).getTime() : 0;
       const dateB = b.game_date ? new Date(b.game_date).getTime() : 0;
       return dateB - dateA;
     });
+    
+    // Take the last N games for this color
     return sortedGames.slice(0, gameCount);
-  }, [games, gameCount]);
+  }, [games, gameCount, colorFilter]);
 
-  const colorFilteredGames = useMemo(() => {
-    if (colorFilter === 'all') return recentGames;
-    return recentGames.filter(g => g.player_color === colorFilter);
-  }, [recentGames, colorFilter]);
-
-  const stats = useMemo(() => calculateStats(colorFilteredGames), [colorFilteredGames]);
-  const openingStats = useMemo(() => calculateOpeningStats(colorFilteredGames), [colorFilteredGames]);
+  const stats = useMemo(() => calculateStats(recentGames), [recentGames]);
+  const openingStats = useMemo(() => calculateOpeningStats(recentGames), [recentGames]);
 
   // Calculate patterns for habits analysis
   const calculatePatterns = (gamesToAnalyze: Game[], type: 'winning' | 'losing') => {
@@ -108,7 +111,7 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
   };
 
   const analyzeHabits = async () => {
-    if (colorFilteredGames.length === 0) {
+    if (recentGames.length === 0) {
       setHabitsError('No games to analyze');
       setWinningAnalysis(null);
       setLosingAnalysis(null);
@@ -119,8 +122,8 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
     setHabitsError(null);
 
     try {
-      const winningPatterns = calculatePatterns(colorFilteredGames, 'winning');
-      const losingPatterns = calculatePatterns(colorFilteredGames, 'losing');
+      const winningPatterns = calculatePatterns(recentGames, 'winning');
+      const losingPatterns = calculatePatterns(recentGames, 'losing');
       
       const [winningResult, losingResult] = await Promise.all([
         supabase.functions.invoke('analyze-habits', { body: { patterns: winningPatterns } }),
@@ -184,7 +187,7 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
   };
 
   useEffect(() => {
-    if (colorFilteredGames.length > 0) {
+    if (recentGames.length > 0) {
       analyzeHabits();
     }
   }, [gameCount, colorFilter, games.length]);
