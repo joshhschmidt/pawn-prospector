@@ -18,21 +18,36 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
     return b.winPercent - a.winPercent;
   });
 
-  // Truncate long opening names for x-axis display
-  const truncateName = (name: string, maxLength: number = 20) => {
-    if (name.length <= maxLength) return name;
-    return name.slice(0, maxLength - 1) + '…';
-  };
-
   const chartData = sortedData.map(item => ({
     name: OPENING_LABELS[item.bucket],
-    displayName: truncateName(OPENING_LABELS[item.bucket], 22),
-    shortName: OPENING_LABELS[item.bucket].split(' ')[0],
     value: type === 'frequency' ? item.games : item.winPercent,
     games: item.games,
     winPercent: item.winPercent,
     scorePercent: item.scorePercent,
   }));
+
+  // Custom tick component to render each word on a separate line
+  const CustomXAxisTick = ({ x, y, payload }: any) => {
+    const words = payload.value.split(' ');
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text
+          x={0}
+          y={0}
+          textAnchor="middle"
+          fill="hsl(var(--foreground))"
+          fontSize={12}
+          fontWeight={500}
+        >
+          {words.map((word: string, index: number) => (
+            <tspan key={index} x={0} dy={index === 0 ? 12 : 14}>
+              {word}
+            </tspan>
+          ))}
+        </text>
+      </g>
+    );
+  };
 
   const getBarColor = (winPercent: number) => {
     if (winPercent >= 55) return 'hsl(var(--chess-win))';
@@ -69,13 +84,11 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
           margin={{ top: 20, right: 30, left: 30, bottom: 100 }}
         >
           <XAxis
-            dataKey="displayName"
-            tick={{ fill: 'hsl(var(--foreground))', fontSize: 14, fontWeight: 500 }}
-            axisLine={{ stroke: 'white', strokeWidth: 1.5 }}
-            tickLine={{ stroke: 'white', strokeWidth: 1 }}
-            angle={-45}
-            textAnchor="end"
-            height={120}
+            dataKey="name"
+            tick={<CustomXAxisTick />}
+            axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+            tickLine={false}
+            height={80}
             interval={0}
           />
           <YAxis
