@@ -18,8 +18,15 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
     return b.winPercent - a.winPercent;
   });
 
+  // Truncate long opening names for x-axis display
+  const truncateName = (name: string, maxLength: number = 20) => {
+    if (name.length <= maxLength) return name;
+    return name.slice(0, maxLength - 1) + '…';
+  };
+
   const chartData = sortedData.map(item => ({
     name: OPENING_LABELS[item.bucket],
+    displayName: truncateName(OPENING_LABELS[item.bucket], 22),
     shortName: OPENING_LABELS[item.bucket].split(' ')[0],
     value: type === 'frequency' ? item.games : item.winPercent,
     games: item.games,
@@ -62,13 +69,13 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
           margin={{ top: 20, right: 30, left: 30, bottom: 100 }}
         >
           <XAxis
-            dataKey="name"
+            dataKey="displayName"
             tick={{ fill: 'hsl(var(--foreground))', fontSize: 14, fontWeight: 500 }}
             axisLine={{ stroke: 'white', strokeWidth: 1.5 }}
             tickLine={{ stroke: 'white', strokeWidth: 1 }}
-            angle={-35}
+            angle={-45}
             textAnchor="end"
-            height={110}
+            height={120}
             interval={0}
           />
           <YAxis
