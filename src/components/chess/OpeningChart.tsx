@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { OpeningStats, OPENING_LABELS } from '@/types/chess';
 
@@ -7,6 +8,8 @@ interface OpeningChartProps {
 }
 
 export const OpeningChart = ({ data, type }: OpeningChartProps) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   // Sort data from greatest to least based on chart type
   const sortedData = [...data].sort((a, b) => {
     if (type === 'frequency') {
@@ -28,23 +31,6 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
     if (winPercent >= 55) return 'hsl(var(--chess-win))';
     if (winPercent >= 45) return 'hsl(var(--accent))';
     return 'hsl(var(--chess-loss))';
-  };
-
-  const CustomCursor = (props: any) => {
-    const { x, y, width } = props;
-    const chartBottom = 320; // 420px container height - 100px bottom margin
-    const barHeight = chartBottom - y;
-    
-    return (
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={Math.max(0, barHeight)}
-        fill="white"
-        fillOpacity={0.15}
-      />
-    );
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -98,15 +84,22 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
               fontWeight: 600,
             }}
           />
-          <Tooltip content={<CustomTooltip />} cursor={<CustomCursor />} />
+          <Tooltip content={<CustomTooltip />} cursor={false} />
           <Bar
             dataKey="value"
             radius={[4, 4, 0, 0]}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={type === 'frequency' ? 'hsl(var(--primary))' : getBarColor(entry.winPercent)}
+                style={{
+                  filter: hoveredIndex === index ? 'brightness(1.3)' : 'brightness(1)',
+                  transition: 'filter 0.2s ease-out',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={() => setHoveredIndex(index)}
               />
             ))}
           </Bar>
