@@ -30,6 +30,22 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
     return 'hsl(var(--chess-loss))';
   };
 
+  const CustomCursor = (props: any) => {
+    const { x, width, height } = props;
+    const margin = 4;
+    
+    return (
+      <rect
+        x={x - margin}
+        y={0}
+        width={width + (margin * 2)}
+        height={height}
+        fill="hsl(var(--accent))"
+        fillOpacity={0.15}
+      />
+    );
+  };
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -81,7 +97,7 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
               fontWeight: 600,
             }}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip />} cursor={<CustomCursor />} />
           <Bar
             dataKey="value"
             radius={[4, 4, 0, 0]}
