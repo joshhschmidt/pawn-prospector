@@ -40,6 +40,20 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
   const filteredGames = filterGames(games, filters);
   const availableOpenings = [...new Set(games.map(g => g.opening_bucket).filter(Boolean))] as OpeningBucket[];
 
+  // Helper to clean markdown symbols from AI responses
+  const cleanMarkdown = (text: string): string => {
+    return text
+      .replace(/#{1,6}\s*/g, '') // Remove headers
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+      .replace(/\*([^*]+)\*/g, '$1') // Remove italic
+      .replace(/__([^_]+)__/g, '$1') // Remove bold underscore
+      .replace(/_([^_]+)_/g, '$1') // Remove italic underscore
+      .replace(/`([^`]+)`/g, '$1') // Remove inline code
+      .replace(/^[-*+]\s+/gm, '') // Remove list markers
+      .replace(/^\d+\.\s+/gm, '') // Remove numbered list markers
+      .trim();
+  };
+
   const getColorFilteredGames = (colorFilter: ColorFilter) => {
     if (colorFilter === 'all') return filteredGames;
     return filteredGames.filter(g => g.player_color === colorFilter);
@@ -308,8 +322,8 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
             {/* Expanded Details */}
             {isExpanded && insight.detailedExplanation && (
               <div className="pt-3 border-t border-border mt-3">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                  {insight.detailedExplanation}
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {cleanMarkdown(insight.detailedExplanation)}
                 </p>
               </div>
             )}

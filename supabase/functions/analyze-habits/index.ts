@@ -79,7 +79,12 @@ Provide a comprehensive explanation (200-300 words) that includes:
 3. Specific examples of how this manifests in games
 4. Practical advice for the player
 
-Write in second person (you/your) to make it personal and actionable.`;
+CRITICAL RULES:
+- Write in second person (you/your) to make it personal and actionable
+- NEVER refer to yourself as an AI, assistant, coach, or any similar term
+- NEVER use phrases like "I recommend", "As your coach", "I suggest" - just state the advice directly
+- Write in plain text only - do NOT use any markdown formatting like **, ##, #, *, or bullet points
+- Use natural flowing paragraphs instead of lists`;
 
       const detailResponse = await callAIWithRetry(LOVABLE_API_KEY, {
         model: "google/gemini-3-flash-preview",
