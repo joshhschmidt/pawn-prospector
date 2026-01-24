@@ -27,24 +27,26 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
   }));
 
   // Custom tick component to render each word on a separate line
-  const CustomXAxisTick = ({ x, y, payload }: any) => {
+  const CustomXAxisTick = (props: any) => {
+    const { x, y, payload } = props;
+    if (!payload || !payload.value) return null;
+    
     const words = payload.value.split(' ');
     return (
       <g transform={`translate(${x},${y})`}>
-        <text
-          x={0}
-          y={0}
-          textAnchor="middle"
-          fill="hsl(var(--foreground))"
-          fontSize={12}
-          fontWeight={500}
-        >
-          {words.map((word: string, index: number) => (
-            <tspan key={index} x={0} dy={index === 0 ? 12 : 14}>
-              {word}
-            </tspan>
-          ))}
-        </text>
+        {words.map((word: string, index: number) => (
+          <text
+            key={index}
+            x={0}
+            y={index * 14 + 12}
+            textAnchor="middle"
+            style={{ fill: 'hsl(220 10% 80%)' }}
+            fontSize={11}
+            fontWeight={500}
+          >
+            {word}
+          </text>
+        ))}
       </g>
     );
   };
@@ -81,14 +83,14 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          margin={{ top: 20, right: 30, left: 30, bottom: 100 }}
+          margin={{ top: 20, right: 30, left: 30, bottom: 120 }}
         >
           <XAxis
             dataKey="name"
             tick={<CustomXAxisTick />}
-            axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+            axisLine={{ stroke: 'hsl(220 10% 30%)', strokeWidth: 1 }}
             tickLine={false}
-            height={80}
+            height={100}
             interval={0}
           />
           <YAxis
