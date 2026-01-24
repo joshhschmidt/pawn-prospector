@@ -57,7 +57,7 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
 
   const filteredGames = filterGames(games, filters);
   
-  // Calculate top 3 winning openings for the selected color
+  // Calculate top 5 winning openings for the selected color
   const topWinningOpenings = useMemo(() => {
     const colorGames = filteredGames.filter(g => g.player_color === colorFilter);
     const stats = calculateOpeningStats(colorGames);
@@ -71,7 +71,7 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
         winRate: s.wins + s.losses > 0 ? (s.wins / (s.wins + s.losses)) * 100 : 0
       }))
       .sort((a, b) => b.winRate - a.winRate)
-      .slice(0, 3);
+      .slice(0, 5);
     
     return withWinRate;
   }, [filteredGames, colorFilter]);
