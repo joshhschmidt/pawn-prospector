@@ -84,7 +84,8 @@ CRITICAL RULES:
 - NEVER refer to yourself as an AI, assistant, coach, or any similar term
 - NEVER use phrases like "I recommend", "As your coach", "I suggest" - just state the advice directly
 - Write in plain text only - do NOT use any markdown formatting like **, ##, #, *, or bullet points
-- Use natural flowing paragraphs instead of lists`;
+- Use natural flowing paragraphs instead of lists
+- Always use the word "moves" instead of "ply" or "plies" when referring to chess moves`;
 
       const detailResponse = await callAIWithRetry(LOVABLE_API_KEY, {
         model: "google/gemini-3-flash-preview",
@@ -127,6 +128,8 @@ Each insight should include:
 - A clear, specific title (e.g., "Early Castling Dominance", "Knight Fork Vulnerability")
 - A detailed explanation of how this pattern creates decisive evaluation swings
 - A frequency indicator based on the data
+
+IMPORTANT: Always use the word "moves" instead of "ply" or "plies" when referring to chess moves.
 
 Respond ONLY with valid JSON in this exact format:
 {
