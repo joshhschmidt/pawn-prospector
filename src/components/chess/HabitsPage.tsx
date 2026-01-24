@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StickyFilterBar } from './StickyFilterBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, Loader2, Lightbulb, ChevronDown, MessageCircle, Zap, Shield, Target, Crown, Swords, Clock, Castle, Brain, Eye, Footprints, AlertTriangle, CheckCircle, XCircle, Timer, Move, Crosshair, type LucideIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Loader2, Lightbulb, ChevronDown, MessageCircle, Zap, Shield, Target, Crown, Swords, Clock, Castle, Brain, Eye, Rocket, AlertTriangle, CheckCircle, XCircle, Timer, Move, Crosshair, type LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 
@@ -240,7 +240,7 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
     }
     // Development/opening related
     if (text.includes('develop') || text.includes('opening') || text.includes('early')) {
-      return Footprints;
+      return Rocket;
     }
     // Tactical/attack related
     if (text.includes('attack') || text.includes('tactic') || text.includes('aggress') || text.includes('pressure')) {
