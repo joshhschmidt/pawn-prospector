@@ -9,6 +9,7 @@ export interface PracticeLine {
   moves: string[];
   keyIdea: string;
   recommended?: boolean;
+  startingFen?: string; // For middle game sequences that don't start from initial position
 }
 
 interface PracticeBoardProps {
@@ -27,13 +28,14 @@ export const PracticeBoard = ({ line, color, onBack, showBackButton = true }: Pr
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
   const resetPractice = useCallback(() => {
-    setGame(new Chess());
+    const startingPosition = line?.startingFen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    setGame(new Chess(startingPosition));
     setCurrentMoveIndex(0);
     setFeedback(null);
     setShowHint(false);
     setPracticeComplete(false);
     setSelectedSquare(null);
-  }, []);
+  }, [line?.startingFen]);
 
   // Reset when line changes
   useEffect(() => {
@@ -172,7 +174,7 @@ export const PracticeBoard = ({ line, color, onBack, showBackButton = true }: Pr
         <Play className="h-12 w-12 text-muted-foreground/30 mb-4" />
         <h3 className="font-semibold text-foreground mb-2">Practice Board</h3>
         <p className="text-sm text-muted-foreground text-center max-w-xs">
-          Ask your coach to suggest an opening line to practice, then click "Practice" to start.
+          Ask your coach to suggest an opening or tactical sequence to practice, then click "Practice" to start.
         </p>
       </div>
     );

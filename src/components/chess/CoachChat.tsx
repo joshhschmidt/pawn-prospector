@@ -18,6 +18,7 @@ interface ExtractedLine {
   name: string;
   moves: string[];
   keyIdea: string;
+  startingFen?: string;
 }
 
 interface PlayerStats {
@@ -49,6 +50,7 @@ const SUGGESTED_QUESTIONS = [
   "What should I focus on to improve?",
   "Why am I losing games quickly?",
   "Suggest an opening line I can practice",
+  "Teach me a tactical pattern like the Fried Liver",
   "Create a training plan for me",
 ];
 
@@ -75,6 +77,42 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
     }
   }, [initialContext, contextSent, messages.length]);
 
+  // Common middle game tactical sequences with starting positions
+  const TACTICAL_SEQUENCES: Record<string, { fen: string; keyIdea: string }> = {
+    'fried liver': {
+      fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/5N2/PPPP1PPP/RNB1K2R w KQkq - 4 4',
+      keyIdea: 'Sacrifice the knight on f7 to expose the king and launch a devastating attack'
+    },
+    'greek gift': {
+      fen: 'r1bq1rk1/ppp2ppp/2nb1n2/3pp3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w - - 0 7',
+      keyIdea: 'Sacrifice the bishop on h7 to open lines against the castled king'
+    },
+    'légal trap': {
+      fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 3',
+      keyIdea: 'Sacrifice the queen to deliver a smothered checkmate pattern'
+    },
+    'noah\'s ark trap': {
+      fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3',
+      keyIdea: 'Trap the bishop on b5 with a3 and b5, winning material'
+    },
+    'smothered mate': {
+      fen: 'r4rk1/ppp2ppp/2n1b3/2bpP2q/3P4/2N2N2/PPP2PPP/R1BQR1K1 w - - 0 10',
+      keyIdea: 'Deliver checkmate with a knight when the king is trapped by its own pieces'
+    },
+    'back rank mate': {
+      fen: '6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1',
+      keyIdea: 'Exploit the weak back rank when the king lacks escape squares'
+    },
+    'arabian mate': {
+      fen: '5rk1/5ppp/8/8/8/8/5PPP/R4RK1 w - - 0 1',
+      keyIdea: 'Coordinate rook and knight to deliver mate on the edge of the board'
+    },
+    'anastasia\'s mate': {
+      fen: 'r4rk1/pppq1ppp/2n1b3/4N3/3P4/8/PPP2PPP/R2QR1K1 w - - 0 1',
+      keyIdea: 'Use knight and rook to create a deadly mating net on the h-file'
+    },
+  };
+
   // Extract practice lines from AI response
   const extractPracticeLines = (content: string): ExtractedLine[] => {
     const lines: ExtractedLine[] = [];
@@ -92,8 +130,33 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
       }
       return moves;
     };
+
+    // Check for known tactical patterns in content
+    const checkForTacticalSequence = (name: string): { fen: string; keyIdea: string } | null => {
+      const lowerName = name.toLowerCase();
+      for (const [key, value] of Object.entries(TACTICAL_SEQUENCES)) {
+        if (lowerName.includes(key)) {
+          return value;
+        }
+      }
+      return null;
+    };
+
+    // Pattern for FEN positions: [FEN: ...]
+    const fenPattern = /\[FEN:\s*([^\]]+)\]/gi;
+    const fenMatches: Record<string, string> = {};
+    let fenMatch;
+    while ((fenMatch = fenPattern.exec(content)) !== null) {
+      const fenPosition = fenMatch[1].trim();
+      // Associate with nearby line name
+      const contextAfter = content.slice(fenMatch.index, fenMatch.index + 200);
+      const nameMatch = contextAfter.match(/\*\*([^*]+)\*\*/);
+      if (nameMatch) {
+        fenMatches[nameMatch[1].toLowerCase()] = fenPosition;
+      }
+    }
     
-    // Pattern 1: **Opening Name**: 1. e4 e5 2. Nf3... (bold name with colon)
+    // Pattern 1: **Opening/Tactic Name**: 1. e4 e5 2. Nf3... (bold name with colon)
     const boldColonPattern = /\*\*([^*]+)\*\*\s*:\s*((?:\d+\.\s*[A-Za-z][a-zA-Z0-9+#=xO\-]*\s*[A-Za-z]?[a-zA-Z0-9+#=xO\-]*\s*)+)/g;
     let match;
     while ((match = boldColonPattern.exec(content)) !== null) {
@@ -101,18 +164,32 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
       const moves = parseMoves(match[2]);
       if (moves.length >= 4 && !seenNames.has(name.toLowerCase())) {
         seenNames.add(name.toLowerCase());
-        lines.push({ name, moves, keyIdea: `Practice the ${name} opening line` });
+        const tactical = checkForTacticalSequence(name);
+        const explicitFen = fenMatches[name.toLowerCase()];
+        lines.push({ 
+          name, 
+          moves, 
+          keyIdea: tactical?.keyIdea || `Practice the ${name} sequence`,
+          startingFen: explicitFen || tactical?.fen
+        });
       }
     }
     
-    // Pattern 2: Opening Name: 1. e4 e5... (non-bold with colon)
+    // Pattern 2: Opening/Tactic Name: 1. e4 e5... (non-bold with colon)
     const colonPattern = /(?:^|\n)\s*([A-Z][a-zA-Z\s'-]+?):\s*((?:\d+\.\s*[A-Za-z][a-zA-Z0-9+#=xO\-]*\s*[A-Za-z]?[a-zA-Z0-9+#=xO\-]*\s*)+)/g;
     while ((match = colonPattern.exec(content)) !== null) {
       const name = match[1].trim();
       const moves = parseMoves(match[2]);
       if (moves.length >= 4 && !seenNames.has(name.toLowerCase())) {
         seenNames.add(name.toLowerCase());
-        lines.push({ name, moves, keyIdea: `Practice the ${name} opening line` });
+        const tactical = checkForTacticalSequence(name);
+        const explicitFen = fenMatches[name.toLowerCase()];
+        lines.push({ 
+          name, 
+          moves, 
+          keyIdea: tactical?.keyIdea || `Practice the ${name} sequence`,
+          startingFen: explicitFen || tactical?.fen
+        });
       }
     }
     
@@ -127,7 +204,13 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
         const name = nameMatch ? nameMatch[1].trim() : `Opening Line ${lines.length + 1}`;
         if (!seenNames.has(name.toLowerCase())) {
           seenNames.add(name.toLowerCase());
-          lines.push({ name, moves, keyIdea: `Practice this opening line` });
+          const tactical = checkForTacticalSequence(name);
+          lines.push({ 
+            name, 
+            moves, 
+            keyIdea: tactical?.keyIdea || `Practice this sequence`,
+            startingFen: tactical?.fen
+          });
         }
       }
     }
@@ -327,8 +410,8 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
                               size="sm"
                               className="h-7 text-xs gap-1 bg-background/50 hover:bg-primary/10"
                               onClick={() => onPracticeLineSelected(
-                                { ...line, recommended: false },
-                                'white' // Default to white, user can change with tabs
+                                { ...line, recommended: false, startingFen: line.startingFen },
+                                line.startingFen ? 'white' : 'white' // Default to white
                               )}
                             >
                               <Play className="h-3 w-3" />
