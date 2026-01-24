@@ -72,6 +72,12 @@ IMPORTANT - When suggesting opening lines to practice:
 - Provide at least 4-5 moves (8-10 half-moves) for each line
 - The player can practice these lines on the chessboard next to the chat
 
+IMPORTANT - When discussing middle game tactical patterns:
+- You can suggest famous tactical motifs like the Fried Liver Attack, Greek Gift Sacrifice, Légal Trap, Noah's Ark Trap, smothered mate, back rank mate, etc.
+- Format tactical sequences the same way as openings: **Fried Liver Attack**: 1. Nxf7 Kxf7 2. Qf3+ Ke6 3. Nc3
+- The system will automatically load the correct starting position for known tactical patterns
+- Explain the key idea behind each tactic so the player understands WHY it works
+
 If asked about their openings, reference their actual performance data. If asked for a training plan, create one based on their weaknesses.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
