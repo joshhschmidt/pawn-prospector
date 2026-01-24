@@ -86,8 +86,9 @@ export const CoachChat = ({ playerStats, username, initialContext, onContextCons
       playAs: 'white'
     },
     'greek gift': {
-      fen: 'r1bq1rk1/ppp2ppp/2nb1n2/3pp3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w - - 0 7',
-      keyIdea: 'Sacrifice the bishop on h7 to open lines against the castled king',
+      // Classic position: White has Bd3, Nf3, Queen ready; Black has castled with knight on f6
+      fen: 'r1bq1rk1/pppn1ppp/4pn2/3p4/3P4/3BPN2/PPP2PPP/R1BQ1RK1 w - - 0 8',
+      keyIdea: 'Sacrifice the bishop on h7 to open lines against the castled king, follow with Ng5+ and Qh5',
       playAs: 'white'
     },
     'légal trap': {
