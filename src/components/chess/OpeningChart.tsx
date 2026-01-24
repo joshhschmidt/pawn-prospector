@@ -41,7 +41,7 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
         y={y}
         width={width}
         height={Math.max(0, barHeight)}
-        fill="hsl(var(--accent))"
+        fill="white"
         fillOpacity={0.15}
       />
     );
