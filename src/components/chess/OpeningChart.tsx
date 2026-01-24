@@ -100,7 +100,7 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={type === 'frequency' ? 'hsl(var(--primary))' : getBarColor(entry.winPercent)}
+                fill="hsl(var(--primary))"
                 style={{
                   filter: hoveredIndex === index ? 'brightness(1.3)' : 'brightness(1)',
                   transition: 'filter 0.2s ease-out',
