@@ -31,15 +31,16 @@ export const OpeningChart = ({ data, type }: OpeningChartProps) => {
   };
 
   const CustomCursor = (props: any) => {
-    const { x, width, height } = props;
-    const margin = 4;
+    const { x, y, width } = props;
+    const chartBottom = 320; // 420px container height - 100px bottom margin
+    const barHeight = chartBottom - y;
     
     return (
       <rect
-        x={x - margin}
-        y={0}
-        width={width + (margin * 2)}
-        height={height}
+        x={x}
+        y={y}
+        width={width}
+        height={Math.max(0, barHeight)}
         fill="hsl(var(--accent))"
         fillOpacity={0.15}
       />
