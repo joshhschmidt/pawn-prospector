@@ -620,7 +620,7 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                           const OpeningIcon = getOpeningIcon(opening.bucket, opening.name);
                           return (
                             <div className="icon-container flex items-center justify-center w-20 bg-white border-r border-border transition-colors duration-200">
-                              <OpeningIcon className="opening-icon h-10 w-10 text-primary" strokeWidth={1.5} />
+                              <OpeningIcon className="opening-icon h-10 w-10 text-muted-foreground transition-colors duration-200" strokeWidth={1.5} />
                             </div>
                           );
                         })()}
