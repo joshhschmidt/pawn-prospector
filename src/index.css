@@ -227,11 +227,11 @@
 
   /* Smooth collapsible animations */
   [data-state="open"] > [data-radix-collapsible-content] {
-    animation: collapsible-down 0.3s ease-out;
+    animation: collapsible-down 0.6s ease-out;
   }
   
   [data-state="closed"] > [data-radix-collapsible-content] {
-    animation: collapsible-up 0.3s ease-out;
+    animation: collapsible-up 0.6s ease-out;
   }
 
   @keyframes collapsible-down {
