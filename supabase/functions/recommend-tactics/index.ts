@@ -30,6 +30,28 @@ interface TacticalPattern {
   tags: string[];
 }
 
+// Retry fetch with exponential backoff
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+      console.log(`Fetch attempt ${i + 1} failed:`, error);
+      
+      // Wait before retrying (exponential backoff: 500ms, 1000ms, 2000ms)
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, i)));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -77,21 +99,25 @@ ${patternSummary}
 
 Select the 3 best patterns for this player to practice. Return only JSON.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+    const response = await fetchWithRetry(
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.3,
+        }),
       },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-      }),
-    });
+      3 // max retries
+    );
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -158,8 +184,14 @@ Select the 3 best patterns for this player to practice. Return only JSON.`;
 
   } catch (e) {
     console.error("recommend-tactics error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
+    
+    // Return empty recommendations on error instead of failing
+    // This allows the UI to still show the pattern library
+    return new Response(JSON.stringify({ 
+      recommendations: [],
+      error: e instanceof Error ? e.message : "Temporary error - please try again"
+    }), {
+      status: 200, // Return 200 so the UI can handle gracefully
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
