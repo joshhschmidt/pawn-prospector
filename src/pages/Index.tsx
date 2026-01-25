@@ -7,7 +7,6 @@ import { fetchChessComGames } from '@/lib/chess-api';
 import { UsernameImport } from '@/components/chess/UsernameImport';
 import { PGNUpload } from '@/components/chess/PGNUpload';
 import { toast } from 'sonner';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -18,11 +17,13 @@ import { OpeningInsightsPage } from '@/components/chess/OpeningInsightsPage';
 import { GameAnalyzerPage } from '@/components/chess/GameAnalyzerPage';
 import { ExportPage } from '@/components/chess/ExportPage';
 import { CoachingConversationsPage } from '@/components/chess/CoachingConversationsPage';
-import { EmptyState, LoadingState } from '@/components/chess/EmptyLoadingStates';
+import { LoadingState } from '@/components/chess/EmptyLoadingStates';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { useGames } from '@/hooks/useGames';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Upload } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -32,7 +33,8 @@ interface IndexProps {
 
 const Index = ({ demoMode = false }: IndexProps) => {
   const [searchParams] = useSearchParams();
-  const [games, setGames] = useState<Game[]>([]);
+  const { user, isAuthenticated } = useAuth();
+  const { games, setGames, isLoading: gamesLoading, hasSavedGames, saveGamesToDatabase, clearGames } = useGames();
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -50,15 +52,22 @@ const Index = ({ demoMode = false }: IndexProps) => {
   const isDemoMode = demoMode || searchParams.get('demo') === 'true';
   const viewParam = searchParams.get('view');
 
+  // Auto-load saved games for authenticated users
+  useEffect(() => {
+    if (isAuthenticated && hasSavedGames && games.length > 0 && !showDashboard) {
+      setShowDashboard(true);
+    }
+  }, [isAuthenticated, hasSavedGames, games.length, showDashboard]);
+
   // Auto-load demo data when in demo mode
   useEffect(() => {
-    if (isDemoMode && games.length === 0 && !isLoading) {
+    if (isDemoMode && games.length === 0 && !isLoading && !gamesLoading) {
       const demoGames = generateDemoGames(DEMO_USER_ID);
       setGames(demoGames);
       setUsername(DEMO_USERNAME);
       setShowDashboard(true);
     }
-  }, [isDemoMode, games.length, isLoading]);
+  }, [isDemoMode, games.length, isLoading, gamesLoading]);
 
   // Handle deep linking to specific views
   useEffect(() => {
@@ -71,6 +80,13 @@ const Index = ({ demoMode = false }: IndexProps) => {
     setIsLoading(true);
     try {
       const fetchedGames = await fetchChessComGames(importUsername, dateRange, maxGames);
+      
+      // Save to database if authenticated
+      if (isAuthenticated && user) {
+        const gamesWithUserId = fetchedGames.map(g => ({ ...g, user_id: user.id }));
+        await saveGamesToDatabase(gamesWithUserId);
+      }
+      
       setGames(fetchedGames);
       setUsername(importUsername);
       toast.success(`Imported ${fetchedGames.length} games from Chess.com!`);
@@ -94,6 +110,13 @@ const Index = ({ demoMode = false }: IndexProps) => {
     setIsLoading(true);
     try {
       const fetchedGames = await fetchChessComGames(username, 90, 500);
+      
+      // Save to database if authenticated
+      if (isAuthenticated && user) {
+        const gamesWithUserId = fetchedGames.map(g => ({ ...g, user_id: user.id }));
+        await saveGamesToDatabase(gamesWithUserId);
+      }
+      
       setGames(fetchedGames);
       toast.success(`Refreshed ${fetchedGames.length} games from Chess.com!`);
     } catch (error) {
@@ -109,10 +132,17 @@ const Index = ({ demoMode = false }: IndexProps) => {
       const allGames: Game[] = [];
       for (const file of files) {
         const content = await file.text();
-        const parsedGames = parsePGNFile(content, DEMO_USER_ID, username || 'Player');
+        const userId = isAuthenticated && user ? user.id : DEMO_USER_ID;
+        const parsedGames = parsePGNFile(content, userId, username || 'Player');
         allGames.push(...parsedGames);
       }
       if (allGames.length === 0) throw new Error('No valid games found');
+      
+      // Save to database if authenticated
+      if (isAuthenticated && user) {
+        await saveGamesToDatabase(allGames);
+      }
+      
       setGames(allGames);
       setUsername(username || 'Uploaded Games');
       setShowDashboard(true);
@@ -136,10 +166,11 @@ const Index = ({ demoMode = false }: IndexProps) => {
 
   const handleBack = () => {
     setShowDashboard(false);
-    setGames([]);
+    clearGames();
     setUsername('');
     setCurrentView('overview');
   };
+
 
   const renderCurrentView = () => {
     if (currentView === 'import' || currentView === 'dashboard') {
@@ -251,7 +282,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
             </div>
           </header>
           <main className="flex-1 overflow-auto">
-            {isLoading ? <LoadingState /> : renderCurrentView()}
+            {isLoading || gamesLoading ? <LoadingState /> : renderCurrentView()}
           </main>
         </div>
       </div>
