@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Download, Loader2, AlertCircle } from 'lucide-react';
+import { User, Download, Loader2, AlertCircle, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UsernameImportProps {
   onImport: (username: string, dateRange: number, maxGames: number) => Promise<void>;
@@ -12,6 +14,8 @@ interface UsernameImportProps {
 }
 
 export const UsernameImport = ({ onImport, isLoading }: UsernameImportProps) => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [username, setUsername] = useState('');
   const [dateRange, setDateRange] = useState('90');
   const [maxGames, setMaxGames] = useState('500');
@@ -20,6 +24,11 @@ export const UsernameImport = ({ onImport, isLoading }: UsernameImportProps) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
     
     if (!username.trim()) {
       setError('Please enter a Chess.com username');
@@ -33,6 +42,8 @@ export const UsernameImport = ({ onImport, isLoading }: UsernameImportProps) => 
     }
   };
 
+  const isAuthenticated = !!user;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -45,7 +56,11 @@ export const UsernameImport = ({ onImport, isLoading }: UsernameImportProps) => 
         </div>
         <div>
           <h3 className="font-semibold text-foreground">Import from Chess.com</h3>
-          <p className="text-sm text-muted-foreground">Enter your username to analyze your games</p>
+          <p className="text-sm text-muted-foreground">
+            {isAuthenticated 
+              ? 'Enter your username to analyze your games' 
+              : 'Sign in to import your games'}
+          </p>
         </div>
       </div>
 
@@ -59,13 +74,14 @@ export const UsernameImport = ({ onImport, isLoading }: UsernameImportProps) => 
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="bg-secondary border-border"
+            disabled={!isAuthenticated}
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Date Range</Label>
-            <Select value={dateRange} onValueChange={setDateRange}>
+            <Select value={dateRange} onValueChange={setDateRange} disabled={!isAuthenticated}>
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue />
               </SelectTrigger>
@@ -80,7 +96,7 @@ export const UsernameImport = ({ onImport, isLoading }: UsernameImportProps) => 
 
           <div className="space-y-2">
             <Label>Max Games</Label>
-            <Select value={maxGames} onValueChange={setMaxGames}>
+            <Select value={maxGames} onValueChange={setMaxGames} disabled={!isAuthenticated}>
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue />
               </SelectTrigger>
@@ -108,19 +124,32 @@ export const UsernameImport = ({ onImport, isLoading }: UsernameImportProps) => 
           )}
         </AnimatePresence>
 
-        <Button type="submit" className="w-full" variant="hero" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Importing Games...
-            </>
-          ) : (
-            <>
-              <Download className="mr-2 h-4 w-4" />
-              Import Games
-            </>
-          )}
-        </Button>
+        {isAuthenticated ? (
+          <Button type="submit" className="w-full" variant="hero" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Importing Games...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Import Games
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button 
+            type="button" 
+            className="w-full" 
+            variant="hero" 
+            onClick={() => navigate('/auth')}
+            disabled={authLoading}
+          >
+            <LogIn className="mr-2 h-4 w-4" />
+            Sign In to Import
+          </Button>
+        )}
       </form>
     </motion.div>
   );

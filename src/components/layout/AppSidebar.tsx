@@ -10,7 +10,9 @@ import {
   MessageCircle,
   TrendingUp,
   Search,
-  RefreshCw
+  RefreshCw,
+  LogOut,
+  LogIn
 } from 'lucide-react';
 import {
   Sidebar,
@@ -26,6 +28,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 interface AppSidebarProps {
   username?: string;
@@ -47,7 +51,14 @@ const navItems = [
 
 export const AppSidebar = ({ username, onBack, currentView = 'overview', onViewChange, onRefresh }: AppSidebarProps) => {
   const { state } = useSidebar();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const collapsed = state === 'collapsed';
+
+  const handleSignOut = async () => {
+    await signOut();
+    onBack?.();
+  };
 
   const handleNavClick = (id: string) => {
     onViewChange?.(id);
@@ -111,11 +122,32 @@ export const AppSidebar = ({ username, onBack, currentView = 'overview', onViewC
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-4">
+      <SidebarFooter className="border-t border-border p-4 space-y-2">
         {!collapsed && username && (
           <div className="text-xs text-muted-foreground">
             <span className="text-foreground font-medium">{username}</span>
           </div>
+        )}
+        {user ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span>Sign Out</span>}
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/auth')}
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <LogIn className="h-4 w-4" />
+            {!collapsed && <span>Sign In</span>}
+          </Button>
         )}
       </SidebarFooter>
     </Sidebar>
