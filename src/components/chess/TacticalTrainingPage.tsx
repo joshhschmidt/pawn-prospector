@@ -538,12 +538,12 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                               {pattern.key_idea}
                             </p>
-                            <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
                               <span className="capitalize">{pattern.category}</span>
-                              <span className="hidden sm:inline">•</span>
-                              <span className="whitespace-nowrap">Play as {pattern.play_as === 'white' ? '♔ Light' : '♚ Dark'}</span>
-                              <span className="hidden sm:inline">•</span>
-                              <span className="whitespace-nowrap">{pattern.moves.length} {pattern.moves.length === 1 ? 'move' : 'moves'}</span>
+                              <span>•</span>
+                              <span>{pattern.play_as === 'white' ? '♔' : '♚'}</span>
+                              <span>•</span>
+                              <span>{pattern.moves.length}m</span>
                             </div>
                           </div>
                         </div>
