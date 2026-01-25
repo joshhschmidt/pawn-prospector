@@ -338,7 +338,7 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
     
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className={`interactive-card rounded-xl border border-border bg-card overflow-hidden ${isOpen ? 'expanded' : ''}`}>
+        <div className="interactive-card rounded-xl border border-border bg-card overflow-hidden">
           <CollapsibleTrigger className="w-full flex">
             {/* Icon column */}
             <div className="icon-container flex items-center justify-center w-16 transition-colors duration-200">
