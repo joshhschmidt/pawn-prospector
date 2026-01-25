@@ -33,7 +33,7 @@ interface IndexProps {
 
 const Index = ({ demoMode = false }: IndexProps) => {
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, chessComUsername } = useAuth();
   const { games, setGames, isLoading: gamesLoading, hasSavedGames, saveGamesToDatabase, clearGames } = useGames();
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +47,13 @@ const Index = ({ demoMode = false }: IndexProps) => {
     openingBucket: 'all',
   });
   const isMobile = useIsMobile();
+
+  // Pre-fill username from stored chess.com username
+  useEffect(() => {
+    if (chessComUsername && !username) {
+      setUsername(chessComUsername);
+    }
+  }, [chessComUsername, username]);
 
   // Check for demo mode from prop or URL parameter
   const isDemoMode = demoMode || searchParams.get('demo') === 'true';
