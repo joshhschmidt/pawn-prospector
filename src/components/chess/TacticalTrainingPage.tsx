@@ -40,16 +40,24 @@ interface TacticalPattern {
   recommendation_reason?: string;
 }
 
+interface OpeningLine {
+  name: string;
+  moves: string[];
+  keyIdea: string;
+}
+
 interface RecommendedOpening {
   bucket: string;
   name: string;
   color?: 'white' | 'black';
   reason: string;
-  lines: {
-    name: string;
-    moves: string[];
-    keyIdea: string;
-  }[];
+  lines: OpeningLine[];
+}
+
+interface SelectedOpeningLine {
+  opening: RecommendedOpening;
+  line: OpeningLine;
+  color: 'white' | 'black';
 }
 
 type ColorFilter = 'white' | 'black';
@@ -94,8 +102,11 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
 
   // Page-level side filter (governs both sections)
   const [side, setSide] = useState<ColorFilter>('white');
+
+  // Opening line practice state
+  const [selectedOpeningLine, setSelectedOpeningLine] = useState<SelectedOpeningLine | null>(null);
   
-  // Practice state
+  // Practice state (shared for both tactics and openings)
   const [game, setGame] = useState(new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
@@ -284,7 +295,7 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
   }, [gamesCount, side, sideOpeningStats, playerStatsForSide]);
 
   const ColorSubTabs = ({ value, onChange }: { value: ColorFilter; onChange: (v: ColorFilter) => void }) => (
-    <div className="grid grid-cols-2 gap-1 mb-4">
+    <div className="grid grid-cols-2 gap-1">
       <button
         onClick={() => onChange('white')}
         className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -316,7 +327,14 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     if (selectedPattern && selectedPattern.play_as !== side) {
       setSelectedPattern(null);
     }
-  }, [side, selectedPattern]);
+    if (selectedOpeningLine && selectedOpeningLine.color !== side) {
+      setSelectedOpeningLine(null);
+    }
+  }, [side, selectedPattern, selectedOpeningLine]);
+
+  // Determine current practice mode
+  const currentPracticeMoves = selectedPattern?.moves || selectedOpeningLine?.line.moves || [];
+  const currentPracticeColor = selectedPattern?.play_as || selectedOpeningLine?.color || 'white';
 
   const resetPractice = useCallback(() => {
     const fen = selectedPattern?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -329,58 +347,66 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
   }, [selectedPattern]);
 
   useEffect(() => {
-    if (selectedPattern) {
+    if (selectedPattern || selectedOpeningLine) {
       resetPractice();
     }
-  }, [selectedPattern, resetPractice]);
+  }, [selectedPattern, selectedOpeningLine, resetPractice]);
 
   const handleSelectPattern = (pattern: TacticalPattern) => {
+    setSelectedOpeningLine(null);
     setSelectedPattern(pattern);
+  };
+
+  const handleSelectOpeningLine = (opening: RecommendedOpening, line: OpeningLine) => {
+    setSelectedPattern(null);
+    setSelectedOpeningLine({
+      opening,
+      line,
+      color: opening.color || side,
+    });
   };
 
   const handleBackToList = () => {
     setSelectedPattern(null);
+    setSelectedOpeningLine(null);
   };
 
   const isPlayerTurn = useCallback(() => {
-    if (!selectedPattern) return false;
     const isWhiteTurn = game.turn() === 'w';
-    return (selectedPattern.play_as === 'white' && isWhiteTurn) || 
-           (selectedPattern.play_as === 'black' && !isWhiteTurn);
-  }, [game, selectedPattern]);
+    return (currentPracticeColor === 'white' && isWhiteTurn) || 
+           (currentPracticeColor === 'black' && !isWhiteTurn);
+  }, [game, currentPracticeColor]);
 
   // Auto-play opponent moves
   useEffect(() => {
-    if (!selectedPattern || practiceComplete) return;
+    if ((!selectedPattern && !selectedOpeningLine) || practiceComplete) return;
     
-    const moves = selectedPattern.moves;
-    if (currentMoveIndex >= moves.length) {
+    if (currentMoveIndex >= currentPracticeMoves.length) {
       setPracticeComplete(true);
       return;
     }
 
-    if (!isPlayerTurn() && currentMoveIndex < moves.length) {
+    if (!isPlayerTurn() && currentMoveIndex < currentPracticeMoves.length) {
       const timer = setTimeout(() => {
         try {
           const newGame = new Chess(game.fen());
-          newGame.move(moves[currentMoveIndex]);
+          newGame.move(currentPracticeMoves[currentMoveIndex]);
           setGame(newGame);
           setCurrentMoveIndex(prev => prev + 1);
         } catch (e) {
-          console.error('Invalid opponent move:', moves[currentMoveIndex]);
+          console.error('Invalid opponent move:', currentPracticeMoves[currentMoveIndex]);
         }
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [currentMoveIndex, game, selectedPattern, isPlayerTurn, practiceComplete]);
+  }, [currentMoveIndex, game, selectedPattern, selectedOpeningLine, isPlayerTurn, practiceComplete, currentPracticeMoves]);
 
   const onDrop = useCallback((sourceSquare: string, targetSquare: string) => {
-    if (!selectedPattern || !isPlayerTurn() || practiceComplete) return false;
+    if ((!selectedPattern && !selectedOpeningLine) || !isPlayerTurn() || practiceComplete) return false;
     
-    const moves = selectedPattern.moves;
-    if (currentMoveIndex >= moves.length) return false;
+    if (currentMoveIndex >= currentPracticeMoves.length) return false;
 
-    const expectedMove = moves[currentMoveIndex];
+    const expectedMove = currentPracticeMoves[currentMoveIndex];
     
     try {
       const newGame = new Chess(game.fen());
@@ -409,10 +435,10 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     } catch (e) {
       return false;
     }
-  }, [game, selectedPattern, currentMoveIndex, isPlayerTurn, practiceComplete]);
+  }, [game, selectedPattern, selectedOpeningLine, currentMoveIndex, isPlayerTurn, practiceComplete, currentPracticeMoves]);
 
   const onSquareClick = useCallback((square: string) => {
-    if (!selectedPattern || !isPlayerTurn() || practiceComplete) {
+    if ((!selectedPattern && !selectedOpeningLine) || !isPlayerTurn() || practiceComplete) {
       setSelectedSquare(null);
       return;
     }
@@ -426,8 +452,8 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     const piece = game.get(square as any);
     if (piece) {
       const isWhitePiece = piece.color === 'w';
-      const isPlayerPiece = (selectedPattern.play_as === 'white' && isWhitePiece) || 
-                            (selectedPattern.play_as === 'black' && !isWhitePiece);
+      const isPlayerPiece = (currentPracticeColor === 'white' && isWhitePiece) || 
+                            (currentPracticeColor === 'black' && !isWhitePiece);
       if (isPlayerPiece) {
         setSelectedSquare(square);
         return;
@@ -435,7 +461,7 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     }
     
     setSelectedSquare(null);
-  }, [selectedPattern, selectedSquare, isPlayerTurn, practiceComplete, game, onDrop]);
+  }, [selectedPattern, selectedOpeningLine, selectedSquare, isPlayerTurn, practiceComplete, game, onDrop, currentPracticeColor]);
 
   const customSquareStyles = useMemo(() => {
     if (!selectedSquare) return {};
@@ -466,7 +492,11 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     return styles;
   }, [selectedSquare, game]);
 
-  const boardOrientation = selectedPattern?.play_as === 'black' ? 'black' : 'white';
+  const boardOrientation = currentPracticeColor === 'black' ? 'black' : 'white';
+
+  // Determine what we're practicing
+  const practiceTitle = selectedPattern?.name || selectedOpeningLine?.line.name || '';
+  const practiceKeyIdea = selectedPattern?.key_idea || selectedOpeningLine?.line.keyIdea || '';
 
   if (isLoadingPatterns) {
     return (
@@ -480,25 +510,19 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     );
   }
 
-  return (
-    <PageContainer>
-      <PageHeader 
-        title="Training and Development"
-        subtitle="Master tactical patterns and expand your opening repertoire"
-      />
+  // Practice View (shared for both tactics and openings)
+  if (selectedPattern || selectedOpeningLine) {
+    return (
+      <PageContainer>
+        <PageHeader 
+          title="Training and Development"
+          subtitle="Master tactical patterns and expand your opening repertoire"
+        />
 
-      {games.length > 0 && !selectedPattern && (
-        <div className="mt-4 max-w-sm">
-          <ColorSubTabs value={side} onChange={setSide} />
-        </div>
-      )}
-
-      {selectedPattern ? (
-        /* Practice View */
         <div className="mt-4 space-y-4">
           <Button variant="ghost" onClick={handleBackToList} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to Patterns
+            Back to Recommendations
           </Button>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -507,13 +531,21 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground text-lg">{selectedPattern.name}</h3>
-                    <Badge className={getDifficultyColor(selectedPattern.difficulty)}>
-                      {selectedPattern.difficulty}
-                    </Badge>
+                    <h3 className="font-semibold text-foreground text-lg">{practiceTitle}</h3>
+                    {selectedPattern && (
+                      <Badge className={getDifficultyColor(selectedPattern.difficulty)}>
+                        {selectedPattern.difficulty}
+                      </Badge>
+                    )}
+                    {selectedOpeningLine && (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                        Opening Line
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Playing as {selectedPattern.play_as === 'white' ? '♔ White' : '♚ Black'}
+                    Playing as {currentPracticeColor === 'white' ? '♔ White' : '♚ Black'}
+                    {selectedOpeningLine && ` • ${selectedOpeningLine.opening.name}`}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={resetPractice} className="gap-1">
@@ -561,13 +593,15 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                   {practiceComplete && (
                     <div className="flex items-center justify-center gap-2 text-primary">
                       <CheckCircle className="h-5 w-5" />
-                      <span className="font-medium">Pattern complete! Great job!</span>
+                      <span className="font-medium">
+                        {selectedPattern ? 'Pattern complete!' : 'Line complete!'} Great job!
+                      </span>
                     </div>
                   )}
                   {!feedback && !practiceComplete && isPlayerTurn() && (
                     <p className="text-sm text-muted-foreground">Your turn - play the next move</p>
                   )}
-                  {!feedback && !practiceComplete && !isPlayerTurn() && currentMoveIndex < selectedPattern.moves.length && (
+                  {!feedback && !practiceComplete && !isPlayerTurn() && currentMoveIndex < currentPracticeMoves.length && (
                     <p className="text-sm text-muted-foreground">Opponent is thinking...</p>
                   )}
                 </div>
@@ -585,10 +619,10 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                   </Button>
                 </div>
                 
-                {showHint && currentMoveIndex < selectedPattern.moves.length && (
+                {showHint && currentMoveIndex < currentPracticeMoves.length && (
                   <div className="mt-2 text-center">
                     <p className="text-sm text-primary font-mono">
-                      Next move: {selectedPattern.moves[currentMoveIndex]}
+                      Next move: {currentPracticeMoves[currentMoveIndex]}
                     </p>
                   </div>
                 )}
@@ -597,12 +631,12 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                 <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                     <span>Progress</span>
-                    <span>{currentMoveIndex} / {selectedPattern.moves.length} moves</span>
+                    <span>{currentMoveIndex} / {currentPracticeMoves.length} moves</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${(currentMoveIndex / selectedPattern.moves.length) * 100}%` }}
+                      style={{ width: `${(currentMoveIndex / currentPracticeMoves.length) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -613,20 +647,20 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
             <div className="space-y-4">
               <div className="rounded-xl border border-border bg-card p-4">
                 <p className="text-sm font-medium text-foreground mb-2">Key Idea</p>
-                <p className="text-sm text-muted-foreground">{selectedPattern.key_idea}</p>
+                <p className="text-sm text-muted-foreground">{practiceKeyIdea}</p>
                 
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-xs font-medium text-muted-foreground mb-1">Full Sequence</p>
                   <p className="text-sm font-mono text-foreground">
-                    {selectedPattern.moves.map((move, i) => (
+                    {currentPracticeMoves.map((move, i) => (
                       <span key={i} className={i < currentMoveIndex ? 'text-primary' : ''}>
-                        {move}{i < selectedPattern.moves.length - 1 ? ' ' : ''}
+                        {move}{i < currentPracticeMoves.length - 1 ? ' ' : ''}
                       </span>
                     ))}
                   </p>
                 </div>
 
-                {selectedPattern.tags && selectedPattern.tags.length > 0 && (
+                {selectedPattern?.tags && selectedPattern.tags.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-border">
                     <p className="text-xs font-medium text-muted-foreground mb-2">Tags</p>
                     <div className="flex flex-wrap gap-1">
@@ -638,155 +672,188 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                     </div>
                   </div>
                 )}
+
+                {selectedOpeningLine && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Why Learn This?</p>
+                    <p className="text-sm text-primary">{selectedOpeningLine.opening.reason}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-      ) : (
-        /* Pattern List View */
-        <div className="mt-6">
-          {games.length > 0 && (
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* AI Recommended Tactics Section */}
-              <SectionCard
-                title="Recommended Tactics"
-                description="AI-selected patterns based on your games"
-              >
-                {isLoadingRecs ? (
-                  <div className="flex items-center gap-3 py-4">
-                    <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                    <span className="text-sm text-muted-foreground">Analyzing your games...</span>
-                  </div>
-                ) : recommendations.filter((p) => p.play_as === side).length > 0 ? (
-                  <div className="grid gap-4">
-                    {recommendations
-                      .filter((p) => p.play_as === side)
-                      .map((pattern) => {
-                      const CategoryIcon = getCategoryIcon(pattern.category);
-                      return (
-                        <button
-                          key={pattern.id}
-                          onClick={() => handleSelectPattern(pattern)}
-                          className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                              <CategoryIcon className="h-6 w-6 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-foreground truncate">{pattern.name}</h3>
-                              </div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className={getDifficultyColor(pattern.difficulty)}>
-                                  {pattern.difficulty}
-                                </Badge>
-                                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                                  <Sparkles className="h-3 w-3 mr-1" />
-                                  Recommended
-                                </Badge>
-                              </div>
-                              {pattern.recommendation_reason && (
-                                <p className="text-xs text-primary mt-2">{pattern.recommendation_reason}</p>
-                              )}
-                              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                                {pattern.key_idea}
-                              </p>
-                              <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <span className="capitalize">{pattern.category}</span>
-                                <span>•</span>
-                                <span>{pattern.play_as === 'white' ? '♔' : '♚'}</span>
-                                <span>•</span>
-                                <span>{pattern.moves.length} {pattern.moves.length === 1 ? 'move' : 'moves'}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                            <p className="text-xs font-mono text-muted-foreground truncate flex-1">
-                              {pattern.moves.slice(0, 3).join(' ')}
-                              {pattern.moves.length > 3 && '...'}
-                            </p>
-                            <Play className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 py-4 text-muted-foreground">
-                    <Brain className="h-5 w-5" />
-                    <span className="text-sm">No recommendations for this side yet</span>
-                  </div>
-                )}
-              </SectionCard>
+      </PageContainer>
+    );
+  }
 
-              {/* Recommended Openings Section */}
-              <SectionCard
-                title="Recommended Openings"
-                description="AI-suggested openings to expand your repertoire"
-              >
-                {isLoadingOpenings ? (
-                  <div className="flex items-center gap-3 py-4">
-                    <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                    <span className="text-sm text-muted-foreground">Finding new openings for you...</span>
-                  </div>
-                ) : recommendedOpenings.filter((o) => !o.color || o.color === side).length > 0 ? (
-                  <div className="grid gap-4">
-                    {recommendedOpenings
-                      .filter((o) => !o.color || o.color === side)
-                      .map((opening) => (
-                      <div
-                        key={opening.bucket}
-                        className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                            <Brain className="h-6 w-6 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-foreground truncate">{opening.name}</h3>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                Recommended
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-primary mt-2">{opening.reason}</p>
-                            <div className="mt-3 space-y-2">
-                              {opening.lines.slice(0, 2).map((line, idx) => (
-                                <div key={idx} className="text-sm">
-                                  <p className="font-medium text-foreground">{line.name}</p>
-                                  <p className="text-xs text-muted-foreground line-clamp-1">{line.keyIdea}</p>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <span>{opening.lines.length} {opening.lines.length === 1 ? 'line' : 'lines'} to explore</span>
-                            </div>
-                          </div>
+  // List View
+  return (
+    <PageContainer>
+      <PageHeader 
+        title="Training and Development"
+        subtitle="Master tactical patterns and expand your opening repertoire"
+      />
+
+      {games.length > 0 && (
+        <div className="mt-4 mb-6">
+          <ColorSubTabs value={side} onChange={setSide} />
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* AI Recommended Tactics Section */}
+        <SectionCard
+          title="Recommended Tactics"
+          description="AI-selected patterns based on your games"
+        >
+          {isLoadingRecs ? (
+            <div className="flex items-center gap-3 py-4">
+              <Loader2 className="h-5 w-5 text-primary animate-spin" />
+              <span className="text-sm text-muted-foreground">Analyzing your games...</span>
+            </div>
+          ) : recommendations.filter((p) => p.play_as === side).length > 0 ? (
+            <div className="grid gap-4">
+              {recommendations
+                .filter((p) => p.play_as === side)
+                .map((pattern) => {
+                const CategoryIcon = getCategoryIcon(pattern.category);
+                return (
+                  <button
+                    key={pattern.id}
+                    onClick={() => handleSelectPattern(pattern)}
+                    className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <CategoryIcon className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground truncate">{pattern.name}</h3>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                          <p className="text-xs font-mono text-muted-foreground truncate flex-1">
-                            {opening.lines[0]?.moves.slice(0, 4).join(' ')}...
-                          </p>
-                          <Play className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={getDifficultyColor(pattern.difficulty)}>
+                            {pattern.difficulty}
+                          </Badge>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Recommended
+                          </Badge>
+                        </div>
+                        {pattern.recommendation_reason && (
+                          <p className="text-xs text-primary mt-2">{pattern.recommendation_reason}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {pattern.key_idea}
+                        </p>
+                        <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="capitalize">{pattern.category}</span>
+                          <span>•</span>
+                          <span>{pattern.play_as === 'white' ? '♔' : '♚'}</span>
+                          <span>•</span>
+                          <span>{pattern.moves.length} {pattern.moves.length === 1 ? 'move' : 'moves'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                      <p className="text-xs font-mono text-muted-foreground truncate flex-1">
+                        {pattern.moves.slice(0, 3).join(' ')}
+                        {pattern.moves.length > 3 && '...'}
+                      </p>
+                      <Play className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 py-4 text-muted-foreground">
+              <Brain className="h-5 w-5" />
+              <span className="text-sm">No recommendations for this side yet</span>
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Recommended Openings Section */}
+        <SectionCard
+          title="Recommended Openings"
+          description="AI-suggested openings to expand your repertoire"
+        >
+          {isLoadingOpenings ? (
+            <div className="flex items-center gap-3 py-4">
+              <Loader2 className="h-5 w-5 text-primary animate-spin" />
+              <span className="text-sm text-muted-foreground">Finding new openings for you...</span>
+            </div>
+          ) : recommendedOpenings.filter((o) => !o.color || o.color === side).length > 0 ? (
+            <div className="grid gap-4">
+              {recommendedOpenings
+                .filter((o) => !o.color || o.color === side)
+                .map((opening) => (
+                <div
+                  key={opening.bucket}
+                  className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <Brain className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-foreground truncate">{opening.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Recommended
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-primary mt-2">{opening.reason}</p>
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>{opening.color === 'white' ? '♔' : '♚'}</span>
+                        <span>•</span>
+                        <span>{opening.lines.length} {opening.lines.length === 1 ? 'line' : 'lines'} to practice</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Lines - All lines shown with practice buttons */}
+                  <div className="mt-4 pt-3 border-t border-border space-y-3">
+                    {opening.lines.map((line, idx) => (
+                      <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground text-sm">{line.name}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{line.keyIdea}</p>
+                            <p className="text-xs font-mono text-muted-foreground mt-2">
+                              {line.moves.slice(0, 5).join(' ')}
+                              {line.moves.length > 5 && '...'}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSelectOpeningLine(opening, line)}
+                            className="flex-shrink-0 gap-1"
+                          >
+                            <Play className="h-4 w-4" />
+                            Practice
+                          </Button>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="flex items-center gap-3 py-4 text-muted-foreground">
-                    <Brain className="h-5 w-5" />
-                    <span className="text-sm">No opening recommendations for this side yet</span>
-                  </div>
-                )}
-              </SectionCard>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 py-4 text-muted-foreground">
+              <Brain className="h-5 w-5" />
+              <span className="text-sm">No opening recommendations for this side yet</span>
             </div>
           )}
-        </div>
-      )}
+        </SectionCard>
+      </div>
     </PageContainer>
   );
 };
