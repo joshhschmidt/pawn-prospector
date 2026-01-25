@@ -53,6 +53,7 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [colorFilter, setColorFilter] = useState<'white' | 'black'>('white');
+  const [openingTab, setOpeningTab] = useState<'winning' | 'explore'>('winning');
   const [expandedOpenings, setExpandedOpenings] = useState<string[]>([]);
   const [expandedRecommended, setExpandedRecommended] = useState<string[]>([]);
   
@@ -581,13 +582,23 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
         </div>
       ) : (
         /* List View */
-        <div className="mt-4 space-y-8">
-          {/* Your Top Winning Openings */}
+        <div className="mt-4 space-y-6">
+          {/* Secondary tabs for Winning vs Explore */}
+          <Tabs value={openingTab} onValueChange={(v) => setOpeningTab(v as 'winning' | 'explore')} className="w-full">
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="winning" className="gap-2">
+                <Trophy className="h-4 w-4" />
+                Winning Openings
+              </TabsTrigger>
+              <TabsTrigger value="explore" className="gap-2">
+                <Sparkles className="h-4 w-4" />
+                Explore Openings
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {openingTab === 'winning' && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" />
-              Your Top Winning Openings
-            </h3>
             
             {openingsWithLines.length === 0 && !isLoading ? (
               <div className="text-center py-12 text-muted-foreground rounded-xl border border-border bg-card">
@@ -679,13 +690,10 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
               </div>
             )}
           </div>
+          )}
 
-          {/* Recommended New Openings */}
+          {openingTab === 'explore' && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Recommended New Openings
-            </h3>
             <p className="text-sm text-muted-foreground">
               Based on your playing style, try these openings you haven't explored yet.
             </p>
@@ -776,6 +784,7 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
               </div>
             )}
           </div>
+          )}
         </div>
       )}
     </PageContainer>
