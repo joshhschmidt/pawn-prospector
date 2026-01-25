@@ -185,11 +185,15 @@
   }
 
   .interactive-card:hover,
-  .interactive-card:hover * {
+  .interactive-card:hover *:not(.opening-icon) {
     color: black !important;
   }
 
-  /* Icon container turns black on hover, but icon stays blue */
+  /* Icon container: grey border, turns black on hover, icon stays blue */
+  .icon-container {
+    @apply border border-border/50;
+  }
+
   .interactive-card:hover .icon-container {
     @apply bg-black border-black;
   }
