@@ -201,6 +201,23 @@
     transform: scale(1.02);
   }
 
+  /* Force all text and SVG content to black on hover */
+  .interactive-card:not(.expanded):hover,
+  .interactive-card:not(.expanded):hover * {
+    color: hsl(var(--interactive-hover-fg));
+  }
+
+  /* Recharts/SVG elements need fill and stroke overrides */
+  .interactive-card:not(.expanded):hover text,
+  .interactive-card:not(.expanded):hover tspan {
+    fill: hsl(var(--interactive-hover-fg)) !important;
+  }
+
+  .interactive-card:not(.expanded):hover .recharts-cartesian-axis-tick-value,
+  .interactive-card:not(.expanded):hover .recharts-legend-item-text {
+    fill: hsl(var(--interactive-hover-fg)) !important;
+  }
+
   /* Icon container: grey border and background */
   .icon-container {
     background-color: hsl(var(--interactive-icon-bg));
@@ -211,12 +228,6 @@
   .interactive-card:not(.expanded):hover .icon-container {
     background-color: hsl(var(--interactive-icon-hover-bg));
     border-color: hsl(var(--interactive-icon-hover-bg));
-  }
-
-  .interactive-card:not(.expanded):hover .text-foreground,
-  .interactive-card:not(.expanded):hover .text-muted-foreground,
-  .interactive-card:not(.expanded):hover .text-primary {
-    color: hsl(var(--interactive-hover-fg)) !important;
   }
 
   /* Force opening icons to stay blue (including their SVG paths) */
