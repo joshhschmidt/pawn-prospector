@@ -716,13 +716,13 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                     open={expandedRecommended.includes(opening.bucket)}
                     onOpenChange={() => toggleRecommended(opening.bucket)}
                   >
-                    <div className="rounded-xl border border-primary/30 bg-card overflow-hidden">
-                      <CollapsibleTrigger className="w-full flex transition-colors hover:bg-accent/5">
+                    <div className={`interactive-card rounded-xl border border-primary/30 bg-card overflow-hidden ${expandedRecommended.includes(opening.bucket) ? 'expanded' : ''}`}>
+                      <CollapsibleTrigger className="w-full flex">
                         {(() => {
                           const OpeningIcon = getOpeningIcon(opening.bucket, opening.name);
                           return (
-                            <div className="flex items-center justify-center w-20 bg-primary/5 border-r border-border">
-                              <OpeningIcon className="h-10 w-10 text-primary/40" strokeWidth={1.5} />
+                            <div className="icon-container flex items-center justify-center w-20 transition-colors duration-200">
+                              <OpeningIcon className="opening-icon h-10 w-10" strokeWidth={1.5} />
                             </div>
                           );
                         })()}

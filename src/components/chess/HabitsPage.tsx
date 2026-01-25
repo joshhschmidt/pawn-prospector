@@ -285,12 +285,12 @@ export const HabitsPage = ({ games, filters, onFiltersChange, onNavigate }: Habi
     const IconComponent = getHabitIcon(insight.title, insight.description);
     
     return (
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="interactive-card rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex">
           {/* Icon column - fixed size */}
-          <div className="flex items-center justify-center w-20 bg-primary/5 border-r border-border">
+          <div className="icon-container flex items-center justify-center w-20 transition-colors duration-200">
             <IconComponent 
-              className="h-10 w-10 text-primary/40"
+              className="opening-icon h-10 w-10"
               strokeWidth={1.5}
             />
           </div>
