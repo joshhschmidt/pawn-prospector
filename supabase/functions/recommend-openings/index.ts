@@ -103,11 +103,13 @@ serve(async (req) => {
     }
 
     const systemPrompt = `You are an expert chess coach recommending new openings for a player to learn.
- Based on the player's statistics and playing style, recommend 3 openings they haven't tried yet.
- If possible, include at least one opening the player would play as White and at least one they would play as Black.
+Based on the player's statistics and playing style, recommend 3 openings they haven't tried yet.
+If possible, include at least one opening the player would play as White and at least one they would play as Black.
 For each opening, provide:
 1. A personalized reason why this opening would suit them
-2. 2-3 key starting lines to learn
+2. Exactly 7 key lines to learn, with the Classical/Main Line variation ALWAYS listed first
+
+IMPORTANT: The first line for each opening MUST be the Classical or Main Line variation.
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -118,21 +120,46 @@ Respond ONLY with valid JSON in this exact format:
       "reason": "Your aggressive style would thrive with the tactical possibilities in the Italian Game",
       "lines": [
         {
-          "name": "Giuoco Piano Main Line",
-          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "c3", "Nf6", "d4"],
-          "keyIdea": "Control the center with d4 and develop pieces harmoniously"
+          "name": "Classical Variation (Main Line)",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "c3", "Nf6", "d4", "exd4"],
+          "keyIdea": "The main theoretical line - control the center with d4"
+        },
+        {
+          "name": "Giuoco Piano",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "d3", "Nf6", "O-O"],
+          "keyIdea": "Solid positional approach with slow buildup"
         },
         {
           "name": "Evans Gambit",
           "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "b4"],
           "keyIdea": "Sacrifice a pawn for rapid development and attack"
+        },
+        {
+          "name": "Two Knights Defense",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6", "Ng5", "d5"],
+          "keyIdea": "Sharp tactical play with early knight attack"
+        },
+        {
+          "name": "Hungarian Defense",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Be7", "d4", "d6"],
+          "keyIdea": "Solid but passive setup for Black"
+        },
+        {
+          "name": "Greco Gambit",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5", "c3", "Qe7"],
+          "keyIdea": "Aggressive pawn sacrifice for initiative"
+        },
+        {
+          "name": "Prussian Gambit",
+          "moves": ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6", "Ng5", "Bc5"],
+          "keyIdea": "Counter-attacking with piece activity"
         }
       ]
     }
   ]
 }
 
-Keep reasons concise (under 20 words). Each line should have 6-10 moves.`;
+Keep reasons concise (under 20 words). Each line should have 6-10 moves. Always provide exactly 7 lines per opening with Classical/Main Line first.`;
 
     const userPrompt = `Here are the player's statistics:
 - Total games: ${playerStats.totalGames}
