@@ -520,8 +520,10 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                             <CategoryIcon className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-foreground truncate">{pattern.name}</h3>
+                            </div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-semibold text-foreground">{pattern.name}</h3>
                               <Badge className={getDifficultyColor(pattern.difficulty)}>
                                 {pattern.difficulty}
                               </Badge>
@@ -531,9 +533,9 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                               </Badge>
                             </div>
                             {pattern.recommendation_reason && (
-                              <p className="text-xs text-primary mt-1">{pattern.recommendation_reason}</p>
+                              <p className="text-xs text-primary mt-2">{pattern.recommendation_reason}</p>
                             )}
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                               {pattern.key_idea}
                             </p>
                             <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
