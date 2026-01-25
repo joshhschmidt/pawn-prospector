@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SectionCard } from '@/components/layout/SectionCard';
@@ -129,29 +129,45 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     fetchPatterns();
   }, []);
 
-  // Fetch AI recommendations when patterns are loaded and we have game data
+  // Track if we've already fetched recommendations to prevent duplicate calls
+  const hasFetchedRecs = useRef(false);
+  const gamesCount = games.length;
+  const patternsCount = patterns.length;
+
+  // Fetch AI recommendations once when patterns are loaded and we have game data
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (patterns.length === 0 || games.length === 0) return;
+      // Only fetch once, and only when we have data
+      if (hasFetchedRecs.current || patternsCount === 0 || gamesCount === 0) return;
       
+      hasFetchedRecs.current = true;
       setIsLoadingRecs(true);
+      
       try {
         const { data, error } = await supabase.functions.invoke('recommend-tactics', {
           body: { playerStats, patterns }
         });
 
-        if (error) throw error;
-        setRecommendations(data?.recommendations || []);
+        if (error) {
+          // Handle rate limit gracefully
+          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+            console.log('Rate limited - showing patterns without AI recommendations');
+          } else {
+            throw error;
+          }
+        } else {
+          setRecommendations(data?.recommendations || []);
+        }
       } catch (err) {
         console.error('Error fetching recommendations:', err);
-        // Don't show error toast - recommendations are optional
+        // Don't show error toast - recommendations are optional enhancement
       } finally {
         setIsLoadingRecs(false);
       }
     };
 
     fetchRecommendations();
-  }, [patterns, games.length, playerStats]);
+  }, [patternsCount, gamesCount]); // Only depend on counts, not the full objects
 
   const filteredPatterns = category === 'all' 
     ? patterns 
