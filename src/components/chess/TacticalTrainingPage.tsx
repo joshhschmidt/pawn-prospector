@@ -3,7 +3,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SectionCard } from '@/components/layout/SectionCard';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
@@ -41,6 +40,17 @@ interface TacticalPattern {
   recommendation_reason?: string;
 }
 
+interface RecommendedOpening {
+  bucket: string;
+  name: string;
+  reason: string;
+  lines: {
+    name: string;
+    moves: string[];
+    keyIdea: string;
+  }[];
+}
+
 interface TacticalTrainingPageProps {
   games: Game[];
   filters: FilterState;
@@ -68,12 +78,13 @@ const getDifficultyColor = (difficulty: string) => {
 };
 
 export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: TacticalTrainingPageProps) => {
-  const [category, setCategory] = useState<'all' | 'attacks' | 'traps' | 'checkmates' | 'endgames' | 'sacrifices'>('all');
   const [selectedPattern, setSelectedPattern] = useState<TacticalPattern | null>(null);
   const [patterns, setPatterns] = useState<TacticalPattern[]>([]);
   const [isLoadingPatterns, setIsLoadingPatterns] = useState(true);
   const [recommendations, setRecommendations] = useState<TacticalPattern[]>([]);
   const [isLoadingRecs, setIsLoadingRecs] = useState(false);
+  const [recommendedOpenings, setRecommendedOpenings] = useState<RecommendedOpening[]>([]);
+  const [isLoadingOpenings, setIsLoadingOpenings] = useState(false);
   
   // Practice state
   const [game, setGame] = useState(new Chess());
@@ -169,9 +180,45 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
     fetchRecommendations();
   }, [patternsCount, gamesCount]); // Only depend on counts, not the full objects
 
-  const filteredPatterns = category === 'all' 
-    ? patterns 
-    : patterns.filter(p => p.category === category);
+  // Fetch recommended openings from AI
+  const hasFetchedOpenings = useRef(false);
+  
+  useEffect(() => {
+    const fetchOpenings = async () => {
+      if (hasFetchedOpenings.current || gamesCount === 0) return;
+      
+      hasFetchedOpenings.current = true;
+      setIsLoadingOpenings(true);
+      
+      try {
+        // Get openings the user has played
+        const playedBuckets = new Set(openingStats.map(o => o.bucket));
+        
+        const { data, error } = await supabase.functions.invoke('recommend-openings', {
+          body: { 
+            playerStats,
+            playedOpenings: Array.from(playedBuckets)
+          }
+        });
+
+        if (error) {
+          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+            console.log('Rate limited - skipping opening recommendations');
+          } else {
+            throw error;
+          }
+        } else {
+          setRecommendedOpenings(data?.openings || []);
+        }
+      } catch (err) {
+        console.error('Error fetching opening recommendations:', err);
+      } finally {
+        setIsLoadingOpenings(false);
+      }
+    };
+
+    fetchOpenings();
+  }, [gamesCount]);
 
   const resetPractice = useCallback(() => {
     const fen = selectedPattern?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -567,68 +614,68 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
             </SectionCard>
           )}
 
-          {/* Category Filter */}
-          <Tabs value={category} onValueChange={(v) => setCategory(v as any)} className="w-full">
-            <TabsList className="mb-4 w-full grid grid-cols-6">
-              <TabsTrigger value="all">All ({patterns.length})</TabsTrigger>
-              <TabsTrigger value="attacks">Attacks</TabsTrigger>
-              <TabsTrigger value="traps">Traps</TabsTrigger>
-              <TabsTrigger value="checkmates">Checkmates</TabsTrigger>
-              <TabsTrigger value="sacrifices">Sacrifices</TabsTrigger>
-              <TabsTrigger value="endgames">Endgames</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Pattern Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPatterns.map((pattern) => {
-              const CategoryIcon = getCategoryIcon(pattern.category);
-              return (
-                <button
-                  key={pattern.id}
-                  onClick={() => handleSelectPattern(pattern)}
-                  className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                      <CategoryIcon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-foreground">{pattern.name}</h3>
-                        <Badge className={getDifficultyColor(pattern.difficulty)}>
-                          {pattern.difficulty}
-                        </Badge>
+          {/* Recommended Openings Section */}
+          {games.length > 0 && (
+            <SectionCard
+              title="Recommended Openings"
+              description="AI-suggested openings to expand your repertoire"
+            >
+              {isLoadingOpenings ? (
+                <div className="flex items-center gap-3 py-4">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  <span className="text-sm text-muted-foreground">Finding new openings for you...</span>
+                </div>
+              ) : recommendedOpenings.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {recommendedOpenings.map((opening) => (
+                    <div
+                      key={opening.bucket}
+                      className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                          <Brain className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-foreground truncate">{opening.name}</h3>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              Recommended
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-primary mt-2">{opening.reason}</p>
+                          <div className="mt-3 space-y-2">
+                            {opening.lines.slice(0, 2).map((line, idx) => (
+                              <div key={idx} className="text-sm">
+                                <p className="font-medium text-foreground">{line.name}</p>
+                                <p className="text-xs text-muted-foreground line-clamp-1">{line.keyIdea}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span>{opening.lines.length} {opening.lines.length === 1 ? 'line' : 'lines'} to explore</span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {pattern.key_idea}
-                      </p>
-                      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="capitalize">{pattern.category}</span>
-                        <span>•</span>
-                        <span>Play as {pattern.play_as === 'white' ? '♔' : '♚'}</span>
-                        <span>•</span>
-                        <span>{pattern.moves.length} moves</span>
+                      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                        <p className="text-xs font-mono text-muted-foreground truncate flex-1">
+                          {opening.lines[0]?.moves.slice(0, 4).join(' ')}...
+                        </p>
+                        <Play className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                    <p className="text-xs font-mono text-muted-foreground truncate flex-1">
-                      {pattern.moves.slice(0, 3).join(' ')}
-                      {pattern.moves.length > 3 && '...'}
-                    </p>
-                    <Play className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {filteredPatterns.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <Target className="h-10 w-10 mx-auto mb-3 opacity-50" />
-              <p>No patterns found in this category.</p>
-            </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 py-4 text-muted-foreground">
+                  <Brain className="h-5 w-5" />
+                  <span className="text-sm">Import more games to get opening recommendations</span>
+                </div>
+              )}
+            </SectionCard>
           )}
         </div>
       )}
