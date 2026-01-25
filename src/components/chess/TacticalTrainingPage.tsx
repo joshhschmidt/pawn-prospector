@@ -86,11 +86,14 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
   const [isLoadingPatterns, setIsLoadingPatterns] = useState(true);
   const [recommendations, setRecommendations] = useState<TacticalPattern[]>([]);
   const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-  const [recommendedOpenings, setRecommendedOpenings] = useState<RecommendedOpening[]>([]);
+  const [recommendedOpeningsBySide, setRecommendedOpeningsBySide] = useState<Record<ColorFilter, RecommendedOpening[]>>({
+    white: [],
+    black: [],
+  });
   const [isLoadingOpenings, setIsLoadingOpenings] = useState(false);
 
-  const [tacticsColor, setTacticsColor] = useState<ColorFilter>('white');
-  const [openingsColor, setOpeningsColor] = useState<ColorFilter>('white');
+  // Page-level side filter (governs both sections)
+  const [side, setSide] = useState<ColorFilter>('white');
   
   // Practice state
   const [game, setGame] = useState(new Chess());
@@ -104,6 +107,14 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
   const filteredGames = filterGames(games, filters);
   const stats = calculateStats(filteredGames);
   const openingStats = calculateOpeningStats(filteredGames);
+
+  // Side-scoped stats (used for side-specific opening recommendations)
+  const sideGames = useMemo(
+    () => filteredGames.filter((g) => g.player_color === side),
+    [filteredGames, side]
+  );
+  const sideStats = useMemo(() => calculateStats(sideGames), [sideGames]);
+  const sideOpeningStats = useMemo(() => calculateOpeningStats(sideGames), [sideGames]);
 
   const playerStats = useMemo(() => {
     const sortedByGames = [...openingStats].sort((a, b) => b.games - a.games);
@@ -122,6 +133,24 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
       weakestOpenings: sortedByScore.slice(0, 3).map(o => OPENING_LABELS[o.bucket]),
     };
   }, [stats, openingStats]);
+
+  const playerStatsForSide = useMemo(() => {
+    const sortedByGames = [...sideOpeningStats].sort((a, b) => b.games - a.games);
+    const sortedByScore = [...sideOpeningStats].sort((a, b) => a.scorePercent - b.scorePercent);
+
+    return {
+      totalGames: sideStats.totalGames,
+      wins: sideStats.wins,
+      losses: sideStats.losses,
+      draws: sideStats.draws,
+      scorePercent: sideStats.scorePercent,
+      avgGameLength: sideStats.avgGameLength,
+      quickLosses: sideStats.quickLosses,
+      quickWins: sideStats.quickWins,
+      topOpenings: sortedByGames.slice(0, 3).map((o) => OPENING_LABELS[o.bucket]),
+      weakestOpenings: sortedByScore.slice(0, 3).map((o) => OPENING_LABELS[o.bucket]),
+    };
+  }, [sideStats, sideOpeningStats]);
 
   // Fetch patterns from database
   useEffect(() => {
@@ -187,14 +216,20 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
   }, [patternsCount, gamesCount]); // Only depend on counts, not the full objects
 
   // Fetch recommended openings from AI
-  const hasFetchedOpenings = useRef(false);
-  const isFetchingOpenings = useRef(false);
+  const hasFetchedOpeningsBySide = useRef<Record<ColorFilter, boolean>>({ white: false, black: false });
+  const isFetchingOpeningsBySide = useRef<Record<ColorFilter, boolean>>({ white: false, black: false });
   
   useEffect(() => {
     const fetchOpenings = async () => {
-      if (gamesCount === 0 || isFetchingOpenings.current || hasFetchedOpenings.current) return;
+      if (
+        gamesCount === 0 ||
+        isFetchingOpeningsBySide.current[side] ||
+        hasFetchedOpeningsBySide.current[side]
+      ) {
+        return;
+      }
 
-      isFetchingOpenings.current = true;
+      isFetchingOpeningsBySide.current[side] = true;
       setIsLoadingOpenings(true);
 
       // small delay to reduce chance of rate limit when tactics + openings are requested together
@@ -204,20 +239,24 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
       let lastError: unknown = null;
 
       try {
-        // Get openings the user has played
-        const playedBuckets = new Set(openingStats.map(o => o.bucket));
+        // Get openings the player has played for THIS side
+        const playedBuckets = new Set(sideOpeningStats.map((o) => o.bucket));
 
         for (let attempt = 0; attempt < delays.length + 1; attempt++) {
           const { data, error } = await supabase.functions.invoke('recommend-openings', {
             body: {
-              playerStats,
+              playerStats: playerStatsForSide,
               playedOpenings: Array.from(playedBuckets),
+              desiredColor: side,
             },
           });
 
           if (!error) {
-            setRecommendedOpenings(data?.openings || []);
-            hasFetchedOpenings.current = true;
+            setRecommendedOpeningsBySide((prev) => ({
+              ...prev,
+              [side]: data?.openings || [],
+            }));
+            hasFetchedOpeningsBySide.current[side] = true;
             lastError = null;
             break;
           }
@@ -236,13 +275,13 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
           console.error('Error fetching opening recommendations:', lastError);
         }
       } finally {
-        isFetchingOpenings.current = false;
+        isFetchingOpeningsBySide.current[side] = false;
         setIsLoadingOpenings(false);
       }
     };
 
     fetchOpenings();
-  }, [gamesCount, openingStats, playerStats]);
+  }, [gamesCount, side, sideOpeningStats, playerStatsForSide]);
 
   const ColorSubTabs = ({ value, onChange }: { value: ColorFilter; onChange: (v: ColorFilter) => void }) => (
     <div className="grid grid-cols-2 gap-1 mb-4">
@@ -268,6 +307,16 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
       </button>
     </div>
   );
+
+  const recommendedOpenings = recommendedOpeningsBySide[side] ?? [];
+
+  // If user flips the page-level side while practicing a pattern from the other side,
+  // return to list view (keeps the UX consistent with the global filter).
+  useEffect(() => {
+    if (selectedPattern && selectedPattern.play_as !== side) {
+      setSelectedPattern(null);
+    }
+  }, [side, selectedPattern]);
 
   const resetPractice = useCallback(() => {
     const fen = selectedPattern?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -438,6 +487,12 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
         subtitle="Master tactical patterns and expand your opening repertoire"
       />
 
+      {games.length > 0 && !selectedPattern && (
+        <div className="mt-4 max-w-sm">
+          <ColorSubTabs value={side} onChange={setSide} />
+        </div>
+      )}
+
       {selectedPattern ? (
         /* Practice View */
         <div className="mt-4 space-y-4">
@@ -597,16 +652,15 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                 title="Recommended Tactics"
                 description="AI-selected patterns based on your games"
               >
-                <ColorSubTabs value={tacticsColor} onChange={setTacticsColor} />
                 {isLoadingRecs ? (
                   <div className="flex items-center gap-3 py-4">
                     <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     <span className="text-sm text-muted-foreground">Analyzing your games...</span>
                   </div>
-                ) : recommendations.filter((p) => p.play_as === tacticsColor).length > 0 ? (
+                ) : recommendations.filter((p) => p.play_as === side).length > 0 ? (
                   <div className="grid gap-4">
                     {recommendations
-                      .filter((p) => p.play_as === tacticsColor)
+                      .filter((p) => p.play_as === side)
                       .map((pattern) => {
                       const CategoryIcon = getCategoryIcon(pattern.category);
                       return (
@@ -671,16 +725,15 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                 title="Recommended Openings"
                 description="AI-suggested openings to expand your repertoire"
               >
-                <ColorSubTabs value={openingsColor} onChange={setOpeningsColor} />
                 {isLoadingOpenings ? (
                   <div className="flex items-center gap-3 py-4">
                     <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     <span className="text-sm text-muted-foreground">Finding new openings for you...</span>
                   </div>
-                ) : recommendedOpenings.filter((o) => o.color === openingsColor).length > 0 ? (
+                ) : recommendedOpenings.filter((o) => !o.color || o.color === side).length > 0 ? (
                   <div className="grid gap-4">
                     {recommendedOpenings
-                      .filter((o) => o.color === openingsColor)
+                      .filter((o) => !o.color || o.color === side)
                       .map((opening) => (
                       <div
                         key={opening.bucket}

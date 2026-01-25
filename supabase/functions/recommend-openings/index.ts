@@ -77,7 +77,7 @@ serve(async (req) => {
   }
 
   try {
-    const { playerStats, playedOpenings } = await req.json();
+    const { playerStats, playedOpenings, desiredColor } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -87,8 +87,16 @@ serve(async (req) => {
     // Find openings the player hasn't tried
     const playedSet = new Set(playedOpenings || []);
     const newOpenings = ALL_OPENINGS.filter(o => !playedSet.has(o.bucket));
+
+    // If the client asks for a specific side, prefer recommending openings for that side.
+    const preferredOpenings =
+      desiredColor === 'white' || desiredColor === 'black'
+        ? newOpenings.filter((o) => o.color === desiredColor)
+        : newOpenings;
+
+    const candidateOpenings = preferredOpenings.length > 0 ? preferredOpenings : newOpenings;
     
-    if (newOpenings.length === 0) {
+     if (newOpenings.length === 0) {
       return new Response(JSON.stringify({ openings: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -134,8 +142,8 @@ Keep reasons concise (under 20 words). Each line should have 6-10 moves.`;
 - Their top openings: ${playerStats.topOpenings?.join(', ') || 'Unknown'}
 - Their weakest openings: ${playerStats.weakestOpenings?.join(', ') || 'Unknown'}
 
-Available new openings to recommend (pick 3):
-${newOpenings.slice(0, 10).map(o => `- ${o.name} (${o.bucket}) - plays as ${o.color}`).join('\n')}
+ Available new openings to recommend (pick 3):
+ ${candidateOpenings.slice(0, 10).map(o => `- ${o.name} (${o.bucket}) - plays as ${o.color}`).join('\n')}
 
 Choose 3 openings that would complement their playing style and help them improve.`;
 
