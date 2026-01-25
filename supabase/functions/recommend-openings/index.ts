@@ -95,7 +95,8 @@ serve(async (req) => {
     }
 
     const systemPrompt = `You are an expert chess coach recommending new openings for a player to learn.
-Based on the player's statistics and playing style, recommend 3 openings they haven't tried yet.
+ Based on the player's statistics and playing style, recommend 3 openings they haven't tried yet.
+ If possible, include at least one opening the player would play as White and at least one they would play as Black.
 For each opening, provide:
 1. A personalized reason why this opening would suit them
 2. 2-3 key starting lines to learn
@@ -178,7 +179,18 @@ Choose 3 openings that would complement their playing style and help them improv
 
     const result = JSON.parse(jsonMatch[0]);
 
-    return new Response(JSON.stringify(result), {
+    const openings = Array.isArray(result?.openings) ? result.openings : [];
+    const enriched = openings
+      .slice(0, 3)
+      .map((o: any) => {
+        const meta = ALL_OPENINGS.find((x) => x.bucket === o.bucket);
+        return {
+          ...o,
+          color: meta?.color ?? o.color,
+        };
+      });
+
+    return new Response(JSON.stringify({ openings: enriched }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
