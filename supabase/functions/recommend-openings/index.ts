@@ -5,28 +5,70 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Full list of openings to choose from
+// Full list of openings to choose from (expanded to include more options)
 const ALL_OPENINGS = [
+  // White 1.e4 openings
   { bucket: 'italian_game', name: 'Italian Game', color: 'white' },
   { bucket: 'ruy_lopez', name: 'Ruy López', color: 'white' },
   { bucket: 'scotch_game', name: 'Scotch Game', color: 'white' },
   { bucket: 'kings_gambit', name: "King's Gambit", color: 'white' },
   { bucket: 'vienna_game', name: 'Vienna Game', color: 'white' },
+  { bucket: 'bishops_opening', name: "Bishop's Opening", color: 'white' },
+  { bucket: 'four_knights', name: 'Four Knights Game', color: 'white' },
+  { bucket: 'center_game', name: 'Center Game', color: 'white' },
+  { bucket: 'danish_gambit', name: 'Danish Gambit', color: 'white' },
+  { bucket: 'ponziani', name: 'Ponziani Opening', color: 'white' },
+  // White 1.d4 openings
   { bucket: 'london_system', name: 'London System', color: 'white' },
   { bucket: 'queens_gambit', name: "Queen's Gambit", color: 'white' },
   { bucket: 'catalan', name: 'Catalan Opening', color: 'white' },
+  { bucket: 'trompowsky', name: 'Trompowsky Attack', color: 'white' },
+  { bucket: 'colle_system', name: 'Colle System', color: 'white' },
+  { bucket: 'torre_attack', name: 'Torre Attack', color: 'white' },
+  { bucket: 'veresov', name: 'Veresov Attack', color: 'white' },
+  { bucket: 'blackmar_diemer', name: 'Blackmar-Diemer Gambit', color: 'white' },
+  // White flank openings
   { bucket: 'english_opening', name: 'English Opening', color: 'white' },
   { bucket: 'reti_opening', name: 'Réti Opening', color: 'white' },
+  { bucket: 'kings_indian_attack', name: "King's Indian Attack", color: 'white' },
+  { bucket: 'birds_opening', name: "Bird's Opening", color: 'white' },
+  { bucket: 'larsen_opening', name: "Larsen's Opening", color: 'white' },
+  // Black vs 1.e4 - Sicilian
   { bucket: 'sicilian_najdorf', name: 'Sicilian Najdorf', color: 'black' },
   { bucket: 'sicilian_dragon', name: 'Sicilian Dragon', color: 'black' },
+  { bucket: 'sicilian_scheveningen', name: 'Sicilian Scheveningen', color: 'black' },
+  { bucket: 'sicilian_sveshnikov', name: 'Sicilian Sveshnikov', color: 'black' },
+  { bucket: 'sicilian_classical', name: 'Sicilian Classical', color: 'black' },
+  { bucket: 'sicilian_kan', name: 'Sicilian Kan', color: 'black' },
+  { bucket: 'sicilian_taimanov', name: 'Sicilian Taimanov', color: 'black' },
+  { bucket: 'sicilian_accelerated_dragon', name: 'Accelerated Dragon', color: 'black' },
+  // Black vs 1.e4 - other
   { bucket: 'french_defense', name: 'French Defense', color: 'black' },
   { bucket: 'caro_kann', name: 'Caro-Kann Defense', color: 'black' },
+  { bucket: 'scandinavian', name: 'Scandinavian Defense', color: 'black' },
+  { bucket: 'alekhine_defense', name: "Alekhine's Defense", color: 'black' },
+  { bucket: 'pirc_defense', name: 'Pirc Defense', color: 'black' },
+  { bucket: 'modern_defense', name: 'Modern Defense', color: 'black' },
+  { bucket: 'philidor_defense', name: 'Philidor Defense', color: 'black' },
+  { bucket: 'petrov_defense', name: 'Petrov Defense', color: 'black' },
+  // Black vs 1.d4 - Indian systems
   { bucket: 'kings_indian', name: "King's Indian", color: 'black' },
   { bucket: 'grunfeld', name: 'Grünfeld Defense', color: 'black' },
   { bucket: 'nimzo_indian', name: 'Nimzo-Indian', color: 'black' },
+  { bucket: 'queens_indian', name: "Queen's Indian", color: 'black' },
+  { bucket: 'bogo_indian', name: 'Bogo-Indian', color: 'black' },
+  // Black vs 1.d4 - QG responses
   { bucket: 'slav_defense', name: 'Slav Defense', color: 'black' },
+  { bucket: 'semi_slav', name: 'Semi-Slav Defense', color: 'black' },
   { bucket: 'queens_gambit_declined', name: "Queen's Gambit Declined", color: 'black' },
+  { bucket: 'queens_gambit_accepted', name: "Queen's Gambit Accepted", color: 'black' },
+  { bucket: 'tarrasch_defense', name: 'Tarrasch Defense', color: 'black' },
+  { bucket: 'chigorin_defense', name: 'Chigorin Defense', color: 'black' },
+  // Black vs 1.d4 - other
   { bucket: 'dutch_defense', name: 'Dutch Defense', color: 'black' },
+  { bucket: 'benoni', name: 'Benoni Defense', color: 'black' },
+  { bucket: 'benko_gambit', name: 'Benko Gambit', color: 'black' },
+  { bucket: 'budapest_gambit', name: 'Budapest Gambit', color: 'black' },
 ];
 
 serve(async (req) => {
