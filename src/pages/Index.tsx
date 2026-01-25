@@ -14,7 +14,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { OverviewPage } from '@/components/chess/OverviewPage';
 import { RecentProgressPage } from '@/components/chess/RecentProgressPage';
 import { HabitsPage } from '@/components/chess/HabitsPage';
-import { OpeningTrainingPage } from '@/components/chess/OpeningTrainingPage';
+import { OpeningInsightsPage } from '@/components/chess/OpeningInsightsPage';
+import { TacticalTrainingPage } from '@/components/chess/TacticalTrainingPage';
 import { GameAnalyzerPage } from '@/components/chess/GameAnalyzerPage';
 import { ExportPage } from '@/components/chess/ExportPage';
 import { CoachingConversationsPage } from '@/components/chess/CoachingConversationsPage';
@@ -62,7 +63,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
 
   // Handle deep linking to specific views
   useEffect(() => {
-    if (viewParam && ['overview', 'recent-progress', 'habits', 'tactics', 'training', 'analyzer', 'export', 'coaching'].includes(viewParam)) {
+    if (viewParam && ['overview', 'recent-progress', 'habits', 'tactics', 'opening-insights', 'tactical-training', 'analyzer', 'export', 'coaching'].includes(viewParam)) {
       setCurrentView(viewParam);
     }
   }, [viewParam]);
@@ -171,8 +172,11 @@ const Index = ({ demoMode = false }: IndexProps) => {
         if (context) setCoachingContext(context);
       }} />;
     }
-    if (currentView === 'training') {
-      return <OpeningTrainingPage games={games} filters={filters} onFiltersChange={setFilters} />;
+    if (currentView === 'opening-insights') {
+      return <OpeningInsightsPage games={games} filters={filters} onFiltersChange={setFilters} />;
+    }
+    if (currentView === 'tactical-training') {
+      return <TacticalTrainingPage />;
     }
     if (currentView === 'analyzer') {
       return <GameAnalyzerPage games={games} filters={filters} onFiltersChange={setFilters} />;

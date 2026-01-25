@@ -12,7 +12,7 @@ import { Loader2, RotateCcw, ChevronDown, CheckCircle, XCircle, Lightbulb, Troph
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
-interface OpeningTrainingPageProps {
+interface OpeningInsightsPageProps {
   games: Game[];
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
@@ -39,7 +39,7 @@ interface SelectedLine {
   color: 'white' | 'black';
 }
 
-export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: OpeningTrainingPageProps) => {
+export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: OpeningInsightsPageProps) => {
   const [openingsWithLines, setOpeningsWithLines] = useState<OpeningWithLines[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -327,8 +327,8 @@ export const OpeningTrainingPage = ({ games, filters, onFiltersChange }: Opening
   return (
     <PageContainer>
       <PageHeader 
-        title="Opening Training"
-        subtitle="Practice your top winning openings with multiple lines"
+        title="Opening Insights"
+        subtitle="Practice your top winning openings with AI-generated lines"
       />
 
       <StickyFilterBar
