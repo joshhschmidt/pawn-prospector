@@ -40,7 +40,6 @@ const navItems = [
   { id: 'habits', title: 'Habits', icon: Brain },
   { id: 'recent-progress', title: 'Recent Progress', icon: TrendingUp },
   { id: 'opening-insights', title: 'Opening Insights', icon: BookOpen },
-  { id: 'tactical-training', title: 'Training', icon: Target },
   { id: 'analyzer', title: 'Game Analyzer', icon: Search },
   { id: 'coaching', title: 'Coaching Conversations', icon: MessageCircle },
   { id: 'export', title: 'Export', icon: FileDown },
