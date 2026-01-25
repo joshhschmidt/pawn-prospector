@@ -179,6 +179,45 @@ export type Database = {
           },
         ]
       }
+      tactical_patterns: {
+        Row: {
+          category: string
+          created_at: string
+          difficulty: string
+          fen: string
+          id: string
+          key_idea: string
+          moves: string[]
+          name: string
+          play_as: string
+          tags: string[] | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          difficulty: string
+          fen: string
+          id?: string
+          key_idea: string
+          moves: string[]
+          name: string
+          play_as: string
+          tags?: string[] | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          difficulty?: string
+          fen?: string
+          id?: string
+          key_idea?: string
+          moves?: string[]
+          name?: string
+          play_as?: string
+          tags?: string[] | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           chess_com_username: string
