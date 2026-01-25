@@ -85,6 +85,13 @@
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 16%;
     --sidebar-ring: 217 91% 60%;
+
+    /* Interactive card hover overrides */
+    --interactive-hover-bg: 0 0% 100%;
+    --interactive-hover-fg: 0 0% 0%;
+    --interactive-icon-bg: 0 0% 100%;
+    --interactive-icon-hover-bg: 0 0% 0%;
+    --interactive-icon-border: 0 0% 75%;
   }
 
   /* Light mode - kept for compatibility but dark is default */
@@ -108,6 +115,13 @@
     --border: 0 0% 90%;
     --input: 0 0% 90%;
     --ring: 217 91% 55%;
+
+    /* Interactive card hover overrides */
+    --interactive-hover-bg: 0 0% 100%;
+    --interactive-hover-fg: 0 0% 0%;
+    --interactive-icon-bg: 0 0% 100%;
+    --interactive-icon-hover-bg: 0 0% 0%;
+    --interactive-icon-border: 0 0% 75%;
   }
 }
 
@@ -180,25 +194,33 @@
   }
 
   .interactive-card:hover {
-    @apply bg-white border-white shadow-lg;
+    background-color: hsl(var(--interactive-hover-bg));
+    border-color: hsl(var(--interactive-hover-bg));
+    box-shadow: 0 10px 30px -12px hsla(0 0% 0% / 0.35);
+    color: hsl(var(--interactive-hover-fg));
     transform: scale(1.02);
-  }
-
-  .interactive-card:hover,
-  .interactive-card:hover *:not(.opening-icon) {
-    color: black !important;
   }
 
   /* Icon container: grey border, turns black on hover, icon stays blue */
   .icon-container {
-    @apply border border-border/50;
+    background-color: hsl(var(--interactive-icon-bg));
+    border: 1px solid hsl(var(--interactive-icon-border));
   }
 
   .interactive-card:hover .icon-container {
-    @apply bg-black border-black;
+    background-color: hsl(var(--interactive-icon-hover-bg));
+    border-color: hsl(var(--interactive-icon-hover-bg));
   }
 
-  .interactive-card:hover .opening-icon {
+  .interactive-card:hover .text-foreground,
+  .interactive-card:hover .text-muted-foreground,
+  .interactive-card:hover .text-primary {
+    color: hsl(var(--interactive-hover-fg)) !important;
+  }
+
+  /* Force opening icons to stay blue (including their SVG paths) */
+  .opening-icon,
+  .opening-icon * {
     color: hsl(var(--primary)) !important;
   }
 
