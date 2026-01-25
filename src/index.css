@@ -201,11 +201,16 @@
     transform: scale(1.02);
   }
 
-  /* Force header text to black on hover, but exclude nested cards in CollapsibleContent */
-  .interactive-card:not(.expanded):hover > button *,
-  .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] *,
-  .interactive-card:not(.expanded):hover > div:first-child * {
+  /* Force header text to black on hover, but exclude buttons and nested cards */
+  .interactive-card:not(.expanded):hover > button:not(.btn-preserve) *,
+  .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] * {
     color: hsl(var(--interactive-hover-fg));
+  }
+
+  /* Preserve button styling - buttons inside content should keep original colors */
+  .interactive-card:not(.expanded):hover button:not([data-radix-collapsible-trigger]),
+  .interactive-card:not(.expanded):hover button:not([data-radix-collapsible-trigger]) * {
+    color: inherit;
   }
 
   /* Recharts/SVG elements need fill overrides - only in trigger area */
