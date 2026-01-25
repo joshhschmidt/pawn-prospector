@@ -89,9 +89,9 @@
     /* Interactive card hover overrides */
     --interactive-hover-bg: 0 0% 100%;
     --interactive-hover-fg: 0 0% 0%;
-    --interactive-icon-bg: 0 0% 100%;
-    --interactive-icon-hover-bg: 0 0% 0%;
-    --interactive-icon-border: 0 0% 75%;
+    --interactive-icon-bg: 0 0% 11%;
+    --interactive-icon-hover-bg: 0 0% 11%;
+    --interactive-icon-border: 0 0% 30%;
   }
 
   /* Light mode - kept for compatibility but dark is default */
@@ -193,7 +193,7 @@
     @apply relative transition-all duration-200 cursor-pointer;
   }
 
-  .interactive-card:hover {
+  .interactive-card:not(.expanded):hover {
     background-color: hsl(var(--interactive-hover-bg));
     border-color: hsl(var(--interactive-hover-bg));
     box-shadow: 0 10px 30px -12px hsla(0 0% 0% / 0.35);
@@ -201,20 +201,21 @@
     transform: scale(1.02);
   }
 
-  /* Icon container: grey border, turns black on hover, icon stays blue */
+  /* Icon container: grey border and background */
   .icon-container {
     background-color: hsl(var(--interactive-icon-bg));
     border: 1px solid hsl(var(--interactive-icon-border));
+    border-right: 1px solid hsl(var(--interactive-icon-border));
   }
 
-  .interactive-card:hover .icon-container {
+  .interactive-card:not(.expanded):hover .icon-container {
     background-color: hsl(var(--interactive-icon-hover-bg));
     border-color: hsl(var(--interactive-icon-hover-bg));
   }
 
-  .interactive-card:hover .text-foreground,
-  .interactive-card:hover .text-muted-foreground,
-  .interactive-card:hover .text-primary {
+  .interactive-card:not(.expanded):hover .text-foreground,
+  .interactive-card:not(.expanded):hover .text-muted-foreground,
+  .interactive-card:not(.expanded):hover .text-primary {
     color: hsl(var(--interactive-hover-fg)) !important;
   }
 
