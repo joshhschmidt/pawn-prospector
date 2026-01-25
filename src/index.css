@@ -225,6 +225,37 @@
     color: hsl(var(--primary)) !important;
   }
 
+  /* Smooth collapsible animations */
+  [data-state="open"] > [data-radix-collapsible-content] {
+    animation: collapsible-down 0.3s ease-out;
+  }
+  
+  [data-state="closed"] > [data-radix-collapsible-content] {
+    animation: collapsible-up 0.3s ease-out;
+  }
+
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+      opacity: 0;
+    }
+    to {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+  }
+
+  @keyframes collapsible-up {
+    from {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+    to {
+      height: 0;
+      opacity: 0;
+    }
+  }
+
   /* Chess piece pattern background */
   .chess-pattern {
     background-image: 
