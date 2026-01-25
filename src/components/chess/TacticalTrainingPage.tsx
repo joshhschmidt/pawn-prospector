@@ -43,6 +43,7 @@ interface TacticalPattern {
 interface RecommendedOpening {
   bucket: string;
   name: string;
+  color?: 'white' | 'black';
   reason: string;
   lines: {
     name: string;
@@ -50,6 +51,8 @@ interface RecommendedOpening {
     keyIdea: string;
   }[];
 }
+
+type ColorFilter = 'white' | 'black';
 
 interface TacticalTrainingPageProps {
   games: Game[];
@@ -85,6 +88,9 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
   const [isLoadingRecs, setIsLoadingRecs] = useState(false);
   const [recommendedOpenings, setRecommendedOpenings] = useState<RecommendedOpening[]>([]);
   const [isLoadingOpenings, setIsLoadingOpenings] = useState(false);
+
+  const [tacticsColor, setTacticsColor] = useState<ColorFilter>('white');
+  const [openingsColor, setOpeningsColor] = useState<ColorFilter>('white');
   
   // Practice state
   const [game, setGame] = useState(new Chess());
@@ -182,43 +188,86 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
 
   // Fetch recommended openings from AI
   const hasFetchedOpenings = useRef(false);
+  const isFetchingOpenings = useRef(false);
   
   useEffect(() => {
     const fetchOpenings = async () => {
-      if (hasFetchedOpenings.current || gamesCount === 0) return;
-      
-      hasFetchedOpenings.current = true;
+      if (gamesCount === 0 || isFetchingOpenings.current || hasFetchedOpenings.current) return;
+
+      isFetchingOpenings.current = true;
       setIsLoadingOpenings(true);
-      
+
+      // small delay to reduce chance of rate limit when tactics + openings are requested together
+      await new Promise((r) => setTimeout(r, 900));
+
+      const delays = [500, 1200, 2500];
+      let lastError: unknown = null;
+
       try {
         // Get openings the user has played
         const playedBuckets = new Set(openingStats.map(o => o.bucket));
-        
-        const { data, error } = await supabase.functions.invoke('recommend-openings', {
-          body: { 
-            playerStats,
-            playedOpenings: Array.from(playedBuckets)
-          }
-        });
 
-        if (error) {
-          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-            console.log('Rate limited - skipping opening recommendations');
-          } else {
-            throw error;
+        for (let attempt = 0; attempt < delays.length + 1; attempt++) {
+          const { data, error } = await supabase.functions.invoke('recommend-openings', {
+            body: {
+              playerStats,
+              playedOpenings: Array.from(playedBuckets),
+            },
+          });
+
+          if (!error) {
+            setRecommendedOpenings(data?.openings || []);
+            hasFetchedOpenings.current = true;
+            lastError = null;
+            break;
           }
-        } else {
-          setRecommendedOpenings(data?.openings || []);
+
+          lastError = error;
+          const isRateLimited = error.message?.includes('429') || error.message?.toLowerCase?.().includes('rate limit');
+          if (!isRateLimited) break;
+
+          if (attempt < delays.length) {
+            await new Promise((r) => setTimeout(r, delays[attempt]));
+          }
         }
-      } catch (err) {
-        console.error('Error fetching opening recommendations:', err);
+
+        if (lastError) {
+          // keep console-only: recommendations are an enhancement and can be rate-limited
+          console.error('Error fetching opening recommendations:', lastError);
+        }
       } finally {
+        isFetchingOpenings.current = false;
         setIsLoadingOpenings(false);
       }
     };
 
     fetchOpenings();
-  }, [gamesCount]);
+  }, [gamesCount, openingStats, playerStats]);
+
+  const ColorSubTabs = ({ value, onChange }: { value: ColorFilter; onChange: (v: ColorFilter) => void }) => (
+    <div className="grid grid-cols-2 gap-1 mb-4">
+      <button
+        onClick={() => onChange('white')}
+        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+          value === 'white'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        As White
+      </button>
+      <button
+        onClick={() => onChange('black')}
+        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+          value === 'black'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        As Black
+      </button>
+    </div>
+  );
 
   const resetPractice = useCallback(() => {
     const fen = selectedPattern?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -548,14 +597,17 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                 title="Recommended Tactics"
                 description="AI-selected patterns based on your games"
               >
+                <ColorSubTabs value={tacticsColor} onChange={setTacticsColor} />
                 {isLoadingRecs ? (
                   <div className="flex items-center gap-3 py-4">
                     <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     <span className="text-sm text-muted-foreground">Analyzing your games...</span>
                   </div>
-                ) : recommendations.length > 0 ? (
+                ) : recommendations.filter((p) => p.play_as === tacticsColor).length > 0 ? (
                   <div className="grid gap-4">
-                    {recommendations.map((pattern) => {
+                    {recommendations
+                      .filter((p) => p.play_as === tacticsColor)
+                      .map((pattern) => {
                       const CategoryIcon = getCategoryIcon(pattern.category);
                       return (
                         <button
@@ -609,7 +661,7 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                 ) : (
                   <div className="flex items-center gap-3 py-4 text-muted-foreground">
                     <Brain className="h-5 w-5" />
-                    <span className="text-sm">Import more games to get personalized recommendations</span>
+                    <span className="text-sm">No recommendations for this side yet</span>
                   </div>
                 )}
               </SectionCard>
@@ -619,14 +671,17 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                 title="Recommended Openings"
                 description="AI-suggested openings to expand your repertoire"
               >
+                <ColorSubTabs value={openingsColor} onChange={setOpeningsColor} />
                 {isLoadingOpenings ? (
                   <div className="flex items-center gap-3 py-4">
                     <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     <span className="text-sm text-muted-foreground">Finding new openings for you...</span>
                   </div>
-                ) : recommendedOpenings.length > 0 ? (
+                ) : recommendedOpenings.filter((o) => o.color === openingsColor).length > 0 ? (
                   <div className="grid gap-4">
-                    {recommendedOpenings.map((opening) => (
+                    {recommendedOpenings
+                      .filter((o) => o.color === openingsColor)
+                      .map((opening) => (
                       <div
                         key={opening.bucket}
                         className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
@@ -671,7 +726,7 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                 ) : (
                   <div className="flex items-center gap-3 py-4 text-muted-foreground">
                     <Brain className="h-5 w-5" />
-                    <span className="text-sm">Import more games to get opening recommendations</span>
+                    <span className="text-sm">No opening recommendations for this side yet</span>
                   </div>
                 )}
               </SectionCard>
