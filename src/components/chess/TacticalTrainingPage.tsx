@@ -543,7 +543,7 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                               <span>•</span>
                               <span>{pattern.play_as === 'white' ? '♔' : '♚'}</span>
                               <span>•</span>
-                              <span>{pattern.moves.length}m</span>
+                              <span>{pattern.moves.length} {pattern.moves.length === 1 ? 'move' : 'moves'}</span>
                             </div>
                           </div>
                         </div>
