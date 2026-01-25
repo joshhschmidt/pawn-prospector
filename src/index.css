@@ -174,23 +174,19 @@
     @apply opacity-100;
   }
 
-  /* Interactive card hover - white highlight with inverted text */
+  /* Interactive card hover - white background with black text + scale */
   .interactive-card {
     @apply relative transition-all duration-200 cursor-pointer;
   }
 
   .interactive-card:hover {
-    @apply bg-foreground/95 border-foreground/50;
-    transform: translateY(-1px);
+    @apply bg-white border-white shadow-lg;
+    transform: scale(1.02);
   }
 
+  .interactive-card:hover,
   .interactive-card:hover * {
-    @apply text-background;
-  }
-
-  .interactive-card:hover .text-muted-foreground,
-  .interactive-card:hover .text-primary {
-    @apply text-background/70;
+    color: black !important;
   }
 
   /* Chess piece pattern background */
