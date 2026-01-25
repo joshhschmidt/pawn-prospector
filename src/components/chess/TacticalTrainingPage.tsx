@@ -506,29 +506,51 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
                   <span className="text-sm text-muted-foreground">Analyzing your games...</span>
                 </div>
               ) : recommendations.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {recommendations.map((pattern) => {
                     const CategoryIcon = getCategoryIcon(pattern.category);
                     return (
                       <button
                         key={pattern.id}
                         onClick={() => handleSelectPattern(pattern)}
-                        className="text-left rounded-xl border-2 border-primary/30 bg-primary/5 p-4 transition-all hover:shadow-lg hover:border-primary group"
+                        className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 rounded-lg bg-primary/20">
-                            <Sparkles className="h-5 w-5 text-primary" />
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <CategoryIcon className="h-6 w-6 text-primary" />
                           </div>
-                          <Badge className={getDifficultyColor(pattern.difficulty)}>
-                            {pattern.difficulty}
-                          </Badge>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-foreground">{pattern.name}</h3>
+                              <Badge className={getDifficultyColor(pattern.difficulty)}>
+                                {pattern.difficulty}
+                              </Badge>
+                              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Recommended
+                              </Badge>
+                            </div>
+                            {pattern.recommendation_reason && (
+                              <p className="text-xs text-primary mt-1">{pattern.recommendation_reason}</p>
+                            )}
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                              {pattern.key_idea}
+                            </p>
+                            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="capitalize">{pattern.category}</span>
+                              <span>•</span>
+                              <span>Play as {pattern.play_as === 'white' ? '♔' : '♚'}</span>
+                              <span>•</span>
+                              <span>{pattern.moves.length} moves</span>
+                            </div>
+                          </div>
                         </div>
-                        <h4 className="font-semibold text-foreground mb-1">{pattern.name}</h4>
-                        <p className="text-xs text-primary mb-2">{pattern.recommendation_reason}</p>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{pattern.key_idea}</p>
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground capitalize">{pattern.category}</span>
-                          <Play className="h-4 w-4 text-primary" />
+                        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                          <p className="text-xs font-mono text-muted-foreground truncate flex-1">
+                            {pattern.moves.slice(0, 3).join(' ')}
+                            {pattern.moves.length > 3 && '...'}
+                          </p>
+                          <Play className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
                         </div>
                       </button>
                     );
