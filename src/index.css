@@ -201,21 +201,20 @@
     transform: scale(1.02);
   }
 
-  /* Force header text to black on hover, but exclude buttons and nested cards */
-  .interactive-card:not(.expanded):hover > button:not(.btn-preserve) *,
-  .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] * {
+  /* Force header text to black on hover - only direct trigger children */
+  .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] > div:not(:first-child) *:not(button):not(button *) {
     color: hsl(var(--interactive-hover-fg));
   }
 
-  /* Preserve button styling - buttons inside content should keep original colors */
-  .interactive-card:not(.expanded):hover button:not([data-radix-collapsible-trigger]),
-  .interactive-card:not(.expanded):hover button:not([data-radix-collapsible-trigger]) * {
-    color: inherit;
+  /* Preserve ALL button styling - buttons should keep their original colors */
+  .interactive-card:not(.expanded):hover button,
+  .interactive-card:not(.expanded):hover button *,
+  .interactive-card:not(.expanded):hover [role="button"],
+  .interactive-card:not(.expanded):hover [role="button"] * {
+    color: inherit !important;
   }
 
-  /* Recharts/SVG elements need fill overrides - only in trigger area */
-  .interactive-card:not(.expanded):hover > button text,
-  .interactive-card:not(.expanded):hover > button tspan,
+  /* Recharts/SVG elements need fill overrides - only in trigger area, exclude buttons */
   .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] text,
   .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] tspan {
     fill: hsl(var(--interactive-hover-fg)) !important;
