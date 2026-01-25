@@ -201,21 +201,25 @@
     transform: scale(1.02);
   }
 
-  /* Force all text and SVG content to black on hover */
-  .interactive-card:not(.expanded):hover,
-  .interactive-card:not(.expanded):hover * {
+  /* Force header text to black on hover, but exclude nested cards in CollapsibleContent */
+  .interactive-card:not(.expanded):hover > button *,
+  .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] *,
+  .interactive-card:not(.expanded):hover > div:first-child * {
     color: hsl(var(--interactive-hover-fg));
   }
 
-  /* Recharts/SVG elements need fill and stroke overrides */
-  .interactive-card:not(.expanded):hover text,
-  .interactive-card:not(.expanded):hover tspan {
+  /* Recharts/SVG elements need fill overrides - only in trigger area */
+  .interactive-card:not(.expanded):hover > button text,
+  .interactive-card:not(.expanded):hover > button tspan,
+  .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] text,
+  .interactive-card:not(.expanded):hover > [data-radix-collapsible-trigger] tspan {
     fill: hsl(var(--interactive-hover-fg)) !important;
   }
 
-  .interactive-card:not(.expanded):hover .recharts-cartesian-axis-tick-value,
-  .interactive-card:not(.expanded):hover .recharts-legend-item-text {
-    fill: hsl(var(--interactive-hover-fg)) !important;
+  /* Preserve original colors for nested interactive-cards (sub-cards) */
+  .interactive-card:not(.expanded):hover [data-radix-collapsible-content] .interactive-card,
+  .interactive-card:not(.expanded):hover [data-radix-collapsible-content] .interactive-card * {
+    color: inherit;
   }
 
   /* Icon container: grey border and background */
