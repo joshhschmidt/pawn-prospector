@@ -338,11 +338,11 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
     
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="rounded-xl border border-border bg-card overflow-hidden opening-card">
-          <CollapsibleTrigger className="w-full flex hover:bg-muted/10 transition-colors">
+        <div className={`interactive-card rounded-xl border border-border bg-card overflow-hidden ${isOpen ? 'expanded' : ''}`}>
+          <CollapsibleTrigger className="w-full flex">
             {/* Icon column */}
-            <div className="flex items-center justify-center w-16 bg-primary/5 border-r border-border">
-              <Icon className="h-8 w-8 text-primary/40" strokeWidth={1.5} />
+            <div className="icon-container flex items-center justify-center w-16 transition-colors duration-200">
+              <Icon className="opening-icon h-8 w-8" strokeWidth={1.5} />
             </div>
             
             {/* Content column */}
@@ -357,7 +357,7 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
             </div>
           </CollapsibleTrigger>
           
-          <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
+          <CollapsibleContent>
             <div className="p-4 border-t border-border">
               {children}
             </div>
