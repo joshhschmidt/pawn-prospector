@@ -18,8 +18,10 @@ import {
   Shield,
   Sparkles,
   Loader2,
-  Brain
+  Brain,
+  ChevronDown
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { supabase } from '@/integrations/supabase/client';
@@ -105,6 +107,7 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
 
   // Opening line practice state
   const [selectedOpeningLine, setSelectedOpeningLine] = useState<SelectedOpeningLine | null>(null);
+  const [expandedOpenings, setExpandedOpenings] = useState<string[]>([]);
   
   // Practice state (shared for both tactics and openings)
   const [game, setGame] = useState(new Chess());
@@ -789,62 +792,86 @@ export const TacticalTrainingPage = ({ games, filters, onFiltersChange }: Tactic
             <div className="grid gap-4">
               {recommendedOpenings
                 .filter((o) => !o.color || o.color === side)
-                .map((opening) => (
-                <div
-                  key={opening.bucket}
-                  className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                      <Brain className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-foreground truncate">{opening.name}</h3>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                          <Sparkles className="h-3 w-3 mr-1" />
-                          Recommended
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-primary mt-2">{opening.reason}</p>
-                      <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span>{opening.color === 'white' ? '♔' : '♚'}</span>
-                        <span>•</span>
-                        <span>{opening.lines.length} {opening.lines.length === 1 ? 'line' : 'lines'} to practice</span>
-                      </div>
-                    </div>
-                  </div>
+                .map((opening) => {
+                  const isExpanded = expandedOpenings.includes(opening.bucket);
+                  const toggleExpanded = () => {
+                    setExpandedOpenings(prev =>
+                      prev.includes(opening.bucket)
+                        ? prev.filter(b => b !== opening.bucket)
+                        : [...prev, opening.bucket]
+                    );
+                  };
 
-                  {/* Expanded Lines - All lines shown with practice buttons */}
-                  <div className="mt-4 pt-3 border-t border-border space-y-3">
-                    {opening.lines.map((line, idx) => (
-                      <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground text-sm">{line.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{line.keyIdea}</p>
-                            <p className="text-xs font-mono text-muted-foreground mt-2">
-                              {line.moves.slice(0, 5).join(' ')}
-                              {line.moves.length > 5 && '...'}
-                            </p>
+                  return (
+                    <Collapsible
+                      key={opening.bucket}
+                      open={isExpanded}
+                      onOpenChange={toggleExpanded}
+                    >
+                      <div className="text-left rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/50 group">
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full text-left">
+                            <div className="flex items-start gap-4">
+                              <div className="flex-shrink-0 p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                                <Brain className="h-6 w-6 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-foreground truncate">{opening.name}</h3>
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                                    <Sparkles className="h-3 w-3 mr-1" />
+                                    Recommended
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-primary mt-2">{opening.reason}</p>
+                                <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <span>{opening.color === 'white' ? '♔' : '♚'}</span>
+                                  <span>•</span>
+                                  <span>{opening.lines.length} {opening.lines.length === 1 ? 'line' : 'lines'} to practice</span>
+                                </div>
+                              </div>
+                              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                            </div>
+                          </button>
+                        </CollapsibleTrigger>
+
+                        <CollapsibleContent>
+                          {/* Expanded Lines - All lines shown with practice buttons */}
+                          <div className="mt-4 pt-3 border-t border-border space-y-3">
+                            {opening.lines.map((line, idx) => (
+                              <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-foreground text-sm">{line.name}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{line.keyIdea}</p>
+                                    <p className="text-xs font-mono text-muted-foreground mt-2">
+                                      {line.moves.slice(0, 5).join(' ')}
+                                      {line.moves.length > 5 && '...'}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelectOpeningLine(opening, line);
+                                    }}
+                                    className="flex-shrink-0 gap-1"
+                                  >
+                                    <Play className="h-4 w-4" />
+                                    Practice
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSelectOpeningLine(opening, line)}
-                            className="flex-shrink-0 gap-1"
-                          >
-                            <Play className="h-4 w-4" />
-                            Practice
-                          </Button>
-                        </div>
+                        </CollapsibleContent>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                    </Collapsible>
+                  );
+                })}
             </div>
           ) : (
             <div className="flex items-center gap-3 py-4 text-muted-foreground">
