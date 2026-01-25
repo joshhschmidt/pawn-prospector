@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Crown, Loader2, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 
 export const AuthPage = () => {
   const navigate = useNavigate();
@@ -158,19 +159,22 @@ export const AuthPage = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remember-me"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked === true)}
-                      disabled={loading}
-                    />
-                    <Label 
-                      htmlFor="remember-me" 
-                      className="text-sm font-normal text-muted-foreground cursor-pointer"
-                    >
-                      Remember me
-                    </Label>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember-me"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                        disabled={loading}
+                      />
+                      <Label 
+                        htmlFor="remember-me" 
+                        className="text-sm font-normal text-muted-foreground cursor-pointer"
+                      >
+                        Remember me
+                      </Label>
+                    </div>
+                    <ForgotPasswordDialog />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3">
