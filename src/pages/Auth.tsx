@@ -1,28 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Crown, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Crown, Loader2, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export const AuthPage = () => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   
   // Signup form state
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [signupChessUsername, setSignupChessUsername] = useState('');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +42,7 @@ export const AuthPage = () => {
     }
     
     setLoading(true);
-    const { error } = await signIn(loginEmail, loginPassword);
+    const { error } = await signIn(loginEmail, loginPassword, rememberMe);
     setLoading(false);
     
     if (error) {
@@ -59,9 +69,15 @@ export const AuthPage = () => {
       toast({ title: 'Password must be at least 6 characters', variant: 'destructive' });
       return;
     }
+
+    // Validate chess.com username if provided (alphanumeric, underscores, hyphens only)
+    if (signupChessUsername && !/^[a-zA-Z0-9_-]+$/.test(signupChessUsername)) {
+      toast({ title: 'Invalid Chess.com username', description: 'Only letters, numbers, underscores, and hyphens allowed', variant: 'destructive' });
+      return;
+    }
     
     setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword);
+    const { error } = await signUp(signupEmail, signupPassword, signupChessUsername || undefined);
     setLoading(false);
     
     if (error) {
@@ -73,8 +89,17 @@ export const AuthPage = () => {
   };
 
   const handleDemoMode = () => {
-    navigate('/?demo=true');
+    navigate('/demo');
   };
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -133,6 +158,20 @@ export const AuthPage = () => {
                       </Button>
                     </div>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember-me"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      disabled={loading}
+                    />
+                    <Label 
+                      htmlFor="remember-me" 
+                      className="text-sm font-normal text-muted-foreground cursor-pointer"
+                    >
+                      Remember me
+                    </Label>
+                  </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3">
                   <Button type="submit" className="w-full" disabled={loading}>
@@ -156,6 +195,24 @@ export const AuthPage = () => {
                       onChange={(e) => setSignupEmail(e.target.value)}
                       disabled={loading}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-chess-username">
+                      Chess.com Username
+                      <span className="text-muted-foreground text-xs ml-1">(optional)</span>
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-chess-username"
+                        type="text"
+                        placeholder="your_chess_username"
+                        className="pl-9"
+                        value={signupChessUsername}
+                        onChange={(e) => setSignupChessUsername(e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
