@@ -176,7 +176,7 @@ const Index = ({ demoMode = false }: IndexProps) => {
       return <OpeningInsightsPage games={games} filters={filters} onFiltersChange={setFilters} />;
     }
     if (currentView === 'tactical-training') {
-      return <TacticalTrainingPage />;
+      return <TacticalTrainingPage games={games} filters={filters} onFiltersChange={setFilters} />;
     }
     if (currentView === 'analyzer') {
       return <GameAnalyzerPage games={games} filters={filters} onFiltersChange={setFilters} />;
