@@ -189,6 +189,15 @@
     color: black !important;
   }
 
+  /* Icon container turns black on hover, but icon stays blue */
+  .interactive-card:hover .icon-container {
+    @apply bg-black border-black;
+  }
+
+  .interactive-card:hover .opening-icon {
+    color: hsl(var(--primary)) !important;
+  }
+
   /* Chess piece pattern background */
   .chess-pattern {
     background-image: 
