@@ -614,7 +614,7 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                     open={expandedOpenings.includes(opening.bucket)}
                     onOpenChange={() => toggleOpening(opening.bucket)}
                   >
-                    <div className="interactive-card rounded-xl border border-border bg-card overflow-hidden">
+                    <div className={`interactive-card rounded-xl border border-border bg-card overflow-hidden ${expandedOpenings.includes(opening.bucket) ? 'expanded' : ''}`}>
                       <CollapsibleTrigger className="w-full flex">
                         {(() => {
                           const OpeningIcon = getOpeningIcon(opening.bucket, opening.name);
