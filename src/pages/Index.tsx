@@ -48,16 +48,35 @@ const Index = ({ demoMode = false }: IndexProps) => {
   });
   const isMobile = useIsMobile();
 
-  // Pre-fill username from stored chess.com username
-  useEffect(() => {
-    if (chessComUsername && !username) {
-      setUsername(chessComUsername);
-    }
-  }, [chessComUsername, username]);
-
   // Check for demo mode from prop or URL parameter
   const isDemoMode = demoMode || searchParams.get('demo') === 'true';
   const viewParam = searchParams.get('view');
+
+  // Auto-import games when user has a stored chess.com username
+  useEffect(() => {
+    const autoImportGames = async () => {
+      // Only auto-import if:
+      // 1. User is authenticated with a stored chess.com username
+      // 2. Not already loading
+      // 3. No games loaded yet
+      // 4. Not in demo mode
+      // 5. Haven't already shown the dashboard (prevents re-import loops)
+      if (
+        isAuthenticated && 
+        chessComUsername && 
+        !isLoading && 
+        !gamesLoading && 
+        games.length === 0 && 
+        !isDemoMode &&
+        !hasSavedGames
+      ) {
+        setUsername(chessComUsername);
+        await handleUsernameImport(chessComUsername, 90, 500);
+      }
+    };
+    
+    autoImportGames();
+  }, [isAuthenticated, chessComUsername, isLoading, gamesLoading, games.length, isDemoMode, hasSavedGames]);
 
   // Auto-load saved games for authenticated users
   useEffect(() => {
