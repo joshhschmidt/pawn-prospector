@@ -299,9 +299,16 @@
 }
 
 @layer utilities {
-  /* Line card hover - force all children to inherit dark gray text */
-  .hover\:text-gray-800:hover *:not(.text-primary):not(.bg-primary):not(.bg-green-500\/20) {
+  /* Line card hover - force all text children to dark gray, preserve primary-colored elements */
+  .line-card-hover:hover,
+  .line-card-hover:hover * {
     color: rgb(31 41 55) !important;
+  }
+  
+  /* Preserve Play icon and other primary elements */
+  .line-card-hover:hover .text-primary,
+  .line-card-hover:hover .text-primary * {
+    color: hsl(var(--primary)) !important;
   }
   
   /* Fade animations */
