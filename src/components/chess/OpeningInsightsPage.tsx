@@ -559,6 +559,26 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
 
             {/* Opening Details Sidebar */}
             <div className="space-y-4">
+              {/* Key Idea */}
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-sm font-medium text-foreground mb-2">Key Idea</p>
+                <p className="text-sm text-muted-foreground">
+                  {'keyIdea' in selectedLine.line ? selectedLine.line.keyIdea : ''}
+                </p>
+                
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Full Line</p>
+                  <p className="text-sm font-mono text-foreground">
+                    {selectedLine.line.moves.map((move, i) => (
+                      <span key={i} className={i < currentMoveIndex ? 'text-primary' : ''}>
+                        {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}. </span>}
+                        {move}{' '}
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              </div>
+
               {/* Variation Selector */}
               <div className="rounded-xl border border-border bg-card p-4">
                 <p className="text-sm font-medium text-foreground mb-3">Variations</p>
@@ -586,7 +606,7 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                           isActive
                             ? 'bg-primary text-primary-foreground font-medium'
-                            : 'bg-muted/50 text-foreground hover:bg-white hover:text-gray-600 hover:scale-[1.02] hover:shadow-md'
+                            : 'bg-muted/50 text-foreground hover:bg-white hover:text-gray-800 hover:scale-[1.02] hover:shadow-md'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -596,26 +616,6 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                       </button>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Key Idea */}
-              <div className="rounded-xl border border-border bg-card p-4">
-                <p className="text-sm font-medium text-foreground mb-2">Key Idea</p>
-                <p className="text-sm text-muted-foreground">
-                  {'keyIdea' in selectedLine.line ? selectedLine.line.keyIdea : ''}
-                </p>
-                
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Full Line</p>
-                  <p className="text-sm font-mono text-foreground">
-                    {selectedLine.line.moves.map((move, i) => (
-                      <span key={i} className={i < currentMoveIndex ? 'text-primary' : ''}>
-                        {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}. </span>}
-                        {move}{' '}
-                      </span>
-                    ))}
-                  </p>
                 </div>
               </div>
             </div>
