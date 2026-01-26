@@ -712,13 +712,13 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                               <div className="mt-3 pt-3 border-t border-border">
                                 <p className="text-xs font-medium text-muted-foreground mb-1">Moves</p>
                                 <p className="text-xs font-mono text-foreground truncate">
-                                  {line.moves.slice(0, 6).map((move, i) => (
+                                  {line.moves.slice(0, 14).map((move, i) => (
                                     <span key={i}>
                                       {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}.</span>}
                                       {move}{' '}
                                     </span>
                                   ))}
-                                  {line.moves.length > 6 && '...'}
+                                  {line.moves.length > 14 && '...'}
                                 </p>
                               </div>
                             </button>
@@ -806,13 +806,13 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                               <div className="mt-3 pt-3 border-t border-border">
                                 <p className="text-xs font-medium text-muted-foreground mb-1">Moves</p>
                                 <p className="text-xs font-mono text-foreground truncate">
-                                  {line.moves.slice(0, 6).map((move, i) => (
+                                  {line.moves.slice(0, 14).map((move, i) => (
                                     <span key={i}>
                                       {i % 2 === 0 && <span className="text-muted-foreground">{Math.floor(i/2) + 1}.</span>}
                                       {move}{' '}
                                     </span>
                                   ))}
-                                  {line.moves.length > 6 && '...'}
+                                  {line.moves.length > 14 && '...'}
                                 </p>
                               </div>
                             </button>
