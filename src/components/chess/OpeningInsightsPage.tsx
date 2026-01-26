@@ -559,6 +559,47 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
 
             {/* Opening Details Sidebar */}
             <div className="space-y-4">
+              {/* Variation Selector */}
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-sm font-medium text-foreground mb-3">Variations</p>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {selectedLine.opening.lines.map((line, index) => {
+                    const isActive = line.name === selectedLine.line.name;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          if (!isActive) {
+                            if (selectedLine.isRecommended) {
+                              handleSelectRecommendedLine(
+                                selectedLine.opening as RecommendedOpening,
+                                line as { name: string; moves: string[]; keyIdea: string }
+                              );
+                            } else {
+                              handleSelectLine(
+                                selectedLine.opening as OpeningWithLines,
+                                line as PracticeLine
+                              );
+                            }
+                          }
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground font-medium'
+                            : 'bg-muted/50 hover:bg-muted text-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isActive && <Play className="h-3 w-3 flex-shrink-0" />}
+                          <span className="truncate">{line.name}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Key Idea */}
               <div className="rounded-xl border border-border bg-card p-4">
                 <p className="text-sm font-medium text-foreground mb-2">Key Idea</p>
                 <p className="text-sm text-muted-foreground">
