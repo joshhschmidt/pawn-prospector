@@ -583,10 +583,10 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                             }
                           }
                         }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                           isActive
                             ? 'bg-primary text-primary-foreground font-medium'
-                            : 'bg-muted/50 hover:bg-muted text-foreground hover:text-foreground'
+                            : 'bg-muted/50 text-foreground hover:bg-white hover:text-gray-600 hover:scale-[1.02] hover:shadow-md'
                         }`}
                       >
                         <div className="flex items-center gap-2">
