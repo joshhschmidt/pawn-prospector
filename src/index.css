@@ -238,10 +238,11 @@
     border-color: hsl(var(--interactive-icon-hover-bg));
   }
 
-  /* Force opening icons to stay blue (including their SVG paths) */
+  /* Force opening icons to stay blue (including their SVG paths and strokes) */
   .opening-icon,
   .opening-icon * {
     color: hsl(var(--primary)) !important;
+    stroke: hsl(var(--primary)) !important;
   }
 
   /* Smooth collapsible animations */
