@@ -299,6 +299,11 @@
 }
 
 @layer utilities {
+  /* Line card hover - force all children to inherit dark gray text */
+  .hover\:text-gray-800:hover *:not(.text-primary):not(.bg-primary):not(.bg-green-500\/20) {
+    color: rgb(31 41 55) !important;
+  }
+  
   /* Fade animations */
   .animate-fade-in {
     animation: fade-in 0.5s ease-out forwards;
