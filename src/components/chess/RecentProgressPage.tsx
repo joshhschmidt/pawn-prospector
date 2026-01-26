@@ -338,7 +338,7 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
     
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="interactive-card rounded-xl border border-border bg-card overflow-hidden">
+        <div className={`hover-chart rounded-xl border border-border bg-card overflow-hidden transition-all duration-200 ${!isOpen ? 'interactive-card' : ''}`}>
           <CollapsibleTrigger className="w-full flex">
             {/* Icon column */}
             <div className="icon-container flex items-center justify-center w-16 transition-colors duration-200">
@@ -348,8 +348,8 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
             {/* Content column */}
             <div className="flex-1 p-4 flex items-center justify-between">
               <div className="text-left">
-                <h4 className="font-semibold text-foreground">{title}</h4>
-                <p className="text-sm text-muted-foreground">{description}</p>
+                <h4 className="font-semibold text-foreground hover-chart-text">{title}</h4>
+                <p className="text-sm text-muted-foreground hover-chart-text">{description}</p>
               </div>
               <ChevronDown 
                 className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
@@ -358,7 +358,7 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
           </CollapsibleTrigger>
           
           <CollapsibleContent>
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-border hover-chart-content">
               {children}
             </div>
           </CollapsibleContent>

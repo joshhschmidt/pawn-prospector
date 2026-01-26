@@ -226,6 +226,39 @@
     color: inherit;
   }
 
+  /* Chart cards with hover-chart class - apply dark gray to all chart text/lines when hovered */
+  .hover-chart:hover {
+    background-color: hsl(var(--interactive-hover-bg)) !important;
+    border-color: hsl(var(--interactive-hover-bg)) !important;
+  }
+
+  .hover-chart:hover .hover-chart-text {
+    color: rgb(31 41 55) !important;
+  }
+
+  .hover-chart:hover .hover-chart-content {
+    border-color: rgb(209 213 219) !important;
+  }
+
+  .hover-chart:hover text,
+  .hover-chart:hover tspan {
+    fill: rgb(31 41 55) !important;
+  }
+
+  .hover-chart:hover line,
+  .hover-chart:hover .recharts-cartesian-axis-line {
+    stroke: rgb(31 41 55) !important;
+  }
+
+  .hover-chart:hover .recharts-cartesian-axis-tick-line {
+    stroke: rgb(31 41 55) !important;
+  }
+
+  .hover-chart:hover .icon-container {
+    background-color: hsl(var(--interactive-icon-hover-bg));
+    border-color: hsl(var(--interactive-icon-hover-bg));
+  }
+
   /* Icon container: grey border and background */
   .icon-container {
     background-color: hsl(var(--interactive-icon-bg));
