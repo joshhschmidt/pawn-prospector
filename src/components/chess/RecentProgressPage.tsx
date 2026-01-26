@@ -283,23 +283,23 @@ export const RecentProgressPage = ({ games, filters, onFiltersChange, onNavigate
   };
 
   const ColorSubTabs = ({ value, onChange }: { value: ColorFilter; onChange: (val: ColorFilter) => void }) => (
-    <div className="grid grid-cols-2 gap-1 mb-4">
+    <div className="grid grid-cols-2 gap-1 mb-4 bg-muted p-1 rounded-md">
       <button
         onClick={() => onChange('white')}
-        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+        className={`px-3 py-2 text-sm font-medium rounded-sm transition-all duration-200 ${
           value === 'white' 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted text-muted-foreground hover:text-foreground'
+            ? 'bg-primary text-primary-foreground shadow-sm' 
+            : 'text-muted-foreground hover:bg-white hover:text-gray-800 hover:scale-[1.02] hover:shadow-sm'
         }`}
       >
         As White
       </button>
       <button
         onClick={() => onChange('black')}
-        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+        className={`px-3 py-2 text-sm font-medium rounded-sm transition-all duration-200 ${
           value === 'black' 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted text-muted-foreground hover:text-foreground'
+            ? 'bg-primary text-primary-foreground shadow-sm' 
+            : 'text-muted-foreground hover:bg-white hover:text-gray-800 hover:scale-[1.02] hover:shadow-sm'
         }`}
       >
         As Black
