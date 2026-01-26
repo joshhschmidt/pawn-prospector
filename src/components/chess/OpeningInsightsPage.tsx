@@ -685,7 +685,7 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                             <button
                               key={lineIndex}
                               onClick={() => handleSelectLine(opening, line)}
-                              className={`w-full text-left rounded-xl border p-4 transition-all duration-200 hover:bg-white hover:text-gray-800 hover:scale-[1.02] hover:shadow-md ${
+                              className={`line-card-hover w-full text-left rounded-xl border p-4 transition-all duration-200 hover:bg-white hover:scale-[1.02] hover:shadow-md ${
                                 line.recommended 
                                   ? 'border-green-500/50 bg-green-500/5' 
                                   : 'border-border bg-card'
@@ -791,7 +791,7 @@ export const OpeningInsightsPage = ({ games, filters, onFiltersChange }: Opening
                             <button
                               key={lineIndex}
                               onClick={() => handleSelectRecommendedLine(opening, line)}
-                              className="w-full text-left rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:bg-white hover:text-gray-800 hover:scale-[1.02] hover:shadow-md"
+                              className="line-card-hover w-full text-left rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:bg-white hover:scale-[1.02] hover:shadow-md"
                             >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
